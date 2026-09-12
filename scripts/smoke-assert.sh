@@ -25,7 +25,13 @@ echo "--- the API is routed and answering"
 # the static prefixes, nothing else. Probes are for the kubelet. An unauthenticated 401
 # from a real endpoint is the honest public proof that the API is reachable — readiness
 # itself is gated by `helm --wait` and by Compose's healthchecks.
-code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/v1/me")"
+# Retries because this is also the wait: under Compose the proxy answers long before
+# the API has migrated and started, so a single shot races and gets a 502.
+for _ in $(seq 1 90); do
+  code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/v1/me")"
+  [ "$code" = "401" ] && break
+  sleep 2
+done
 [ "$code" = "401" ] || fail "expected 401 from /v1/me, got $code"
 
 echo "--- the document carries the cross-origin isolation headers"
