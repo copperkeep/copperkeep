@@ -74,23 +74,42 @@ export function App() {
 
   // Lazy-loaded on first use, with an explicit first-run state. absent is the ordinary
   // path, not an error — an evicted cache is indistinguishable from a new device.
+  //
+  // Keyed on the learner, NOT on `runtime`. Depending on the state this effect sets is a
+  // trap: storing the instance re-runs the effect, whose cleanup then disposes the very
+  // runtime just stored, leaving a corpse behind which every Run button silently fails.
+  const learnerId = identity?.user_id;
   useEffect(() => {
-    if (!identity || runtime) return;
+    if (!learnerId) return;
+    let cancelled = false;
+
     const instance = createPythonRuntime({
       indexUrl: config().pyodideIndexUrl,
       onProgress: (progress) => setLoaderState(progress.state),
     });
     instance.init().then(
       () => {
+        // Signed out while Pyodide was still loading: nothing will use it.
+        if (cancelled) {
+          instance.dispose();
+          return;
+        }
         setRuntime(instance);
         // Granted far more readily to installed apps; a classroom of tablets
         // cold-fetching Pyodide at once saturates the access point, not the server.
         void navigator.storage?.persist?.();
       },
-      (error) => setBanner(`Python could not start: ${String(error)}`),
+      (error) => {
+        if (!cancelled) setBanner(`Python could not start: ${String(error)}`);
+      },
     );
-    return () => instance.dispose();
-  }, [identity, runtime]);
+
+    return () => {
+      cancelled = true;
+      instance.dispose();
+      setRuntime(null);
+    };
+  }, [learnerId]);
 
   if (!identity) return <Login onSignedIn={setIdentity} />;
 

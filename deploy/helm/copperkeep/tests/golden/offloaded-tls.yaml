@@ -5,17 +5,17 @@ kind: ConfigMap
 metadata:
   name: copperkeep-copperkeep-config
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
 data:
   config.json: |
     {
       "apiBaseUrl": "/v1",
-      "appVersion": "0.1.4",
+      "appVersion": "0.1.5",
       "audioBaseUrl": "/audio",
       "contentBaseUrl": "/content",
       "defaultTheme": "auto",
@@ -32,10 +32,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: copperkeep-copperkeep-backups
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: postgres-backup
@@ -52,10 +52,10 @@ kind: Service
 metadata:
   name: copperkeep-copperkeep-api
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: api
@@ -77,10 +77,10 @@ kind: Service
 metadata:
   name: copperkeep-copperkeep-audio
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: audio
@@ -102,10 +102,10 @@ kind: Service
 metadata:
   name: copperkeep-copperkeep-content
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: content
@@ -127,10 +127,10 @@ kind: Service
 metadata:
   name: copperkeep-copperkeep-postgres
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: postgres
@@ -152,10 +152,10 @@ kind: Service
 metadata:
   name: copperkeep-copperkeep-runtimes
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: runtimes
@@ -177,10 +177,10 @@ kind: Service
 metadata:
   name: copperkeep-copperkeep-web
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: web
@@ -202,10 +202,10 @@ kind: Deployment
 metadata:
   name: copperkeep-copperkeep-api
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: api
@@ -229,7 +229,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: ghcr.io/copperkeep/api:0.1.4
+          image: ghcr.io/copperkeep/api:0.1.5
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -249,7 +249,7 @@ spec:
             - name: COPPERKEEP_DATABASE_URL
               value: postgresql://copperkeep:$(COPPERKEEP_DATABASE_PASSWORD)@copperkeep-copperkeep-postgres:5432/copperkeep
             - name: COPPERKEEP_APP_VERSION
-              value: "0.1.4"
+              value: "0.1.5"
             - name: COPPERKEEP_LOG_LEVEL
               value: "INFO"
             - name: COPPERKEEP_CONTENT_BASE_URL
@@ -322,10 +322,10 @@ kind: Deployment
 metadata:
   name: copperkeep-copperkeep-audio
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: audio
@@ -382,10 +382,10 @@ kind: Deployment
 metadata:
   name: copperkeep-copperkeep-content
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: content
@@ -442,10 +442,10 @@ kind: Deployment
 metadata:
   name: copperkeep-copperkeep-runtimes
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: runtimes
@@ -469,7 +469,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: runtimes
-          image: ghcr.io/copperkeep/runtimes:0.1.4
+          image: ghcr.io/copperkeep/runtimes:0.1.5
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -502,10 +502,10 @@ kind: Deployment
 metadata:
   name: copperkeep-copperkeep-web
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: web
@@ -523,7 +523,7 @@ spec:
         app.kubernetes.io/instance: copperkeep
         app.kubernetes.io/component: web
       annotations:
-        checksum/config: d9b54bff56047c9cb2b958c609054f95707f078aac57e4f36a6c814b5e86b286
+        checksum/config: 8835855b917aea09a1b9cd03d9f1e7ff3d6dfd501ad9a0e697cec870920c9729
     spec:
       securityContext:
         runAsNonRoot: true
@@ -531,7 +531,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: web
-          image: ghcr.io/copperkeep/web:0.1.4
+          image: ghcr.io/copperkeep/web:0.1.5
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -574,10 +574,10 @@ kind: StatefulSet
 metadata:
   name: copperkeep-copperkeep-postgres
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: postgres
@@ -648,10 +648,10 @@ kind: CronJob
 metadata:
   name: copperkeep-copperkeep-backup
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: postgres-backup
@@ -705,10 +705,10 @@ kind: CronJob
 metadata:
   name: copperkeep-copperkeep-reviews
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: review-scheduler
@@ -746,10 +746,10 @@ kind: Ingress
 metadata:
   name: copperkeep-copperkeep
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
   annotations:
@@ -801,10 +801,10 @@ kind: Secret
 metadata:
   name: copperkeep-copperkeep-secrets
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
   annotations:
@@ -838,10 +838,10 @@ kind: Job
 metadata:
   name: copperkeep-copperkeep-migrate
   labels:
-    helm.sh/chart: copperkeep-0.1.4
+    helm.sh/chart: copperkeep-0.1.5
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.4"
+    app.kubernetes.io/version: "0.1.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: migrate
@@ -865,7 +865,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: ghcr.io/copperkeep/api:0.1.4
+          image: ghcr.io/copperkeep/api:0.1.5
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -883,7 +883,7 @@ spec:
             - name: COPPERKEEP_DATABASE_URL
               value: postgresql://copperkeep:$(COPPERKEEP_DATABASE_PASSWORD)@copperkeep-copperkeep-postgres:5432/copperkeep
             - name: COPPERKEEP_APP_VERSION
-              value: "0.1.4"
+              value: "0.1.5"
             - name: COPPERKEEP_LOG_LEVEL
               value: "INFO"
             - name: COPPERKEEP_CONTENT_BASE_URL
