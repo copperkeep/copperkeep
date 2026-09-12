@@ -59,9 +59,3 @@ make smoke         # Compose, end to end
 The runtime conformance suite needs a browser: open `/#conformance` against a running
 instance. CI runs it against the deployed ingress, which is also how COOP/COEP get
 verified.
-
-## A note on the lockfile
-
-`pnpm-lock.yaml` is not committed yet — it needs a machine with pnpm to generate. Run
-`pnpm install` and commit the result; CI currently installs with `--no-frozen-lockfile`
-and should be tightened to `--frozen-lockfile` once the lockfile lands.

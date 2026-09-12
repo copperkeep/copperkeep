@@ -4,6 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
+import asyncpg
 from fastapi import FastAPI, Response, status
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
@@ -23,6 +24,28 @@ async def _refresh_content_forever() -> None:
         metrics.content_loaded.set(1 if index.loaded else 0)
         if not ok:
             log.warning("content still unreachable; continuing on the last-good copy")
+
+
+async def _bootstrap_when_schema_exists() -> None:
+    """Waits for migrations, then bootstraps — in the background, never blocking startup.
+
+    Migrations are a Helm hook, and on a fresh install that hook runs *after* the API
+    pods are up: making readiness depend on the schema would deadlock `helm install
+    --wait` against its own post-install hook. So the API starts, serves readiness, and
+    bootstraps as soon as the tables appear.
+    """
+    if not settings.bootstrap_admin_password:
+        return
+    while True:
+        try:
+            await _bootstrap_org()
+            return
+        except asyncpg.UndefinedTableError:
+            log.info("schema not present yet; waiting for migrations before bootstrapping")
+            await asyncio.sleep(2)
+        except Exception:  # noqa: BLE001 - never take the process down over this
+            log.exception("bootstrap failed; continuing without it")
+            return
 
 
 async def _bootstrap_org() -> None:
@@ -60,14 +83,15 @@ async def lifespan(app: FastAPI):
         format='{"level":"%(levelname)s","logger":"%(name)s","msg":"%(message)s"}',
     )
     await db.connect()
-    await _bootstrap_org()
     await index.refresh()
     metrics.content_loaded.set(1 if index.loaded else 0)
     refresher = asyncio.create_task(_refresh_content_forever())
+    bootstrap = asyncio.create_task(_bootstrap_when_schema_exists())
     try:
         yield
     finally:
         refresher.cancel()
+        bootstrap.cancel()
         await db.disconnect()
 
 

@@ -11,17 +11,25 @@ ADMIN_PASSWORD="smoke-admin-password"
 cleanup() {
   kubectl -n "$NAMESPACE" logs -l app.kubernetes.io/component=api --tail=80 2>/dev/null || true
   kubectl -n "$NAMESPACE" get pods 2>/dev/null || true
+  # Events name the actual reason a pod will not start. Without them a
+  # CreateContainerConfigError is just three words with no cause attached.
+  kubectl -n "$NAMESPACE" get events --sort-by=.lastTimestamp 2>/dev/null | tail -30 || true
   k3d cluster delete "$CLUSTER" || true
 }
 trap cleanup EXIT
 
 k3d cluster create "$CLUSTER" --wait
 
-# The chart names the image after the service. content-base is what this repo builds;
-# the curriculum repo publishes the shipping `content` image FROM it.
+# The chart names each image after its service.
+#
+# content-base is what this repo builds; the curriculum repo publishes the shipping
+# `content` image FROM it. runtimes stands in as the same base rather than being built:
+# the real image downloads ~200MB of Pyodide, and nothing in these assertions reads it —
+# only that the deployment comes up and answers /healthz, which the base conf does.
 docker tag copperkeep/content-base:ci copperkeep/content:ci
+docker tag copperkeep/content-base:ci copperkeep/runtimes:ci
 k3d image import -c "$CLUSTER" \
-  copperkeep/api:ci copperkeep/web:ci copperkeep/content:ci
+  copperkeep/api:ci copperkeep/web:ci copperkeep/content:ci copperkeep/runtimes:ci
 
 helm install copperkeep "$ROOT/deploy/helm/copperkeep" \
   --namespace "$NAMESPACE" --create-namespace \
@@ -35,6 +43,10 @@ helm install copperkeep "$ROOT/deploy/helm/copperkeep" \
   --set audio.enabled=false \
   --set ingress.enabled=false \
   --set ingress.tls.enabled=false \
+  `# k3d's local-path class binds WaitForFirstConsumer, so a backup PVC nothing mounts` \
+  `# would stay Pending and fail --wait. There is nothing to back up in a cluster that` \
+  `# exists for ninety seconds.` \
+  --set postgres.backup.enabled=false \
   --wait --timeout 10m
 
 # No ingress in the smoke cluster: the assertions need one origin, so nginx in the web

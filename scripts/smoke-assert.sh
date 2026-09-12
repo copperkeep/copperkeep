@@ -39,7 +39,18 @@ echo "--- content is reachable from the browser's origin"
 curl -fsS "$BASE/content/manifest.json" | grep -q contentVersion || fail "content manifest"
 
 echo "--- an adult can sign in"
+# First boot creates the admin asynchronously, as soon as migrations land — under Helm
+# that is a post-install hook, so it can be a few seconds behind readiness.
 jar="$(mktemp)"
+for _ in $(seq 1 30); do
+  if curl -fsS -c "$jar" -X POST "$BASE/v1/auth/login" \
+      -H 'Content-Type: application/json' \
+      -d "{\"org\":\"home\",\"username\":\"admin\",\"method\":\"password\",\"secret\":\"${ADMIN_PASSWORD}\"}" \
+      2>/dev/null | grep -q '"role":"adult"'; then
+    break
+  fi
+  sleep 2
+done
 curl -fsS -c "$jar" -X POST "$BASE/v1/auth/login" \
   -H 'Content-Type: application/json' \
   -d "{\"org\":\"home\",\"username\":\"admin\",\"method\":\"password\",\"secret\":\"${ADMIN_PASSWORD}\"}" \

@@ -86,7 +86,18 @@ spec:
     {{- include "copperkeep.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
 {{- if .Values.postgres.backup.enabled }}
+{{- if not .Values.postgres.backup.existingClaim }}
 ---
+{{/*
+A chart-created claim is the fallback, not the recommendation. Two things to know:
+
+- On a storage class with volumeBindingMode: WaitForFirstConsumer (k3s local-path, the
+  default EBS class, most others) this PVC stays Pending until the first CronJob run,
+  because nothing else mounts it. `helm install --wait` fails on that. Set
+  postgres.backup.existingClaim, or use an Immediate-binding class.
+- It lands on the same storage as the database unless you point it elsewhere, and a
+  backup on the same disk as the database is not a backup.
+*/}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -102,6 +113,7 @@ spec:
   resources:
     requests:
       storage: {{ .Values.postgres.backup.storage.size }}
+{{- end }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -151,6 +163,6 @@ spec:
           volumes:
             - name: backups
               persistentVolumeClaim:
-                claimName: {{ include "copperkeep.fullname" . }}-backups
+                claimName: {{ .Values.postgres.backup.existingClaim | default (printf "%s-backups" (include "copperkeep.fullname" .)) }}
 {{- end }}
 {{- end }}

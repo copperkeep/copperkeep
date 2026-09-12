@@ -199,6 +199,10 @@
             "enabled": { "type": "boolean" },
             "schedule": { "type": "string" },
             "retentionDays": { "type": "integer", "minimum": 1 },
+            "existingClaim": {
+              "type": "string",
+              "description": "A PVC you already back up elsewhere. Preferred: a chart-created claim shares the database's storage, and stays Pending on WaitForFirstConsumer classes."
+            },
             "storage": {
               "type": "object",
               "properties": {

@@ -1,0 +1,1038 @@
+---
+# Source: copperkeep/templates/configmap-config-json.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: copperkeep-copperkeep-config
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+data:
+  config.json: |
+    {
+      "apiBaseUrl": "/v1",
+      "appVersion": "0.1.0",
+      "audioBaseUrl": "/audio",
+      "contentBaseUrl": "/content",
+      "defaultTheme": "auto",
+      "micropipIndexUrl": "/runtimes/wheels/",
+      "pyodideIndexUrl": "/runtimes/pyodide/v0.26.4/",
+      "runtimesBaseUrl": "/runtimes",
+      "tutorEnabled": true
+    }
+
+---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copperkeep-copperkeep-backups
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres-backup
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 8Gi
+
+---
+# Source: copperkeep/templates/api.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-api
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: api
+
+---
+# Source: copperkeep/templates/audio.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-audio
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: audio
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: audio
+
+---
+# Source: copperkeep/templates/content.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-content
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: content
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: content
+
+---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-postgres
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: postgres
+
+---
+# Source: copperkeep/templates/runtimes.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-runtimes
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: runtimes
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: runtimes
+
+---
+# Source: copperkeep/templates/tutor.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-tutor
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: tutor
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: tutor
+
+---
+# Source: copperkeep/templates/web.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-web
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: web
+
+---
+# Source: copperkeep/templates/api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperkeep-copperkeep-api
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ghcr.io/copperkeep/api:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: COPPERKEEP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: postgres-password
+            - name: COPPERKEEP_DATABASE_URL
+              value: postgresql://copperkeep:$(COPPERKEEP_DATABASE_PASSWORD)@copperkeep-copperkeep-postgres:5432/copperkeep
+            - name: COPPERKEEP_APP_VERSION
+              value: "0.1.0"
+            - name: COPPERKEEP_LOG_LEVEL
+              value: "INFO"
+            - name: COPPERKEEP_CONTENT_BASE_URL
+              value: http://copperkeep-copperkeep-content:8080
+            - name: COPPERKEEP_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: session-secret
+            - name: COPPERKEEP_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: admin-token
+            - name: COPPERKEEP_COOKIE_SECURE
+              value: "true"
+            - name: COPPERKEEP_AUTH_BACKOFF_AFTER
+              value: "3"
+            - name: COPPERKEEP_AUTH_HARD_LOCK_AFTER
+              value: "10"
+            - name: COPPERKEEP_EVENT_WRITES_PER_MINUTE
+              value: "240"
+            - name: COPPERKEEP_SUBMISSION_MAX_BYTES
+              value: "64000"
+            - name: COPPERKEEP_MASTERY_THRESHOLD
+              value: "0.9"
+            - name: COPPERKEEP_MASTERY_MIN_OPPORTUNITIES
+              value: "3"
+            - name: COPPERKEEP_MASTERY_MIN_STEP_TYPES
+              value: "2"
+            - name: COPPERKEEP_REVIEW_INTERVALS_DAYS
+              value: "[3,7,21]"
+            - name: COPPERKEEP_TUTOR_ENABLED
+              value: "true"
+            - name: COPPERKEEP_TUTOR_BASE_URL
+              value: http://copperkeep-copperkeep-tutor:8000
+            - name: COPPERKEEP_TUTOR_TIMEOUT_SECONDS
+              value: "8"
+            - name: COPPERKEEP_BOOTSTRAP_ORG_SLUG
+              value: "home"
+            - name: COPPERKEEP_BOOTSTRAP_ORG_NAME
+              value: "Home"
+            - name: COPPERKEEP_BOOTSTRAP_ADMIN_USERNAME
+              value: "admin"
+            - name: COPPERKEEP_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: bootstrap-admin-password
+          # Ready means the database answers AND the loaded curriculum is compatible, so
+          # a minAppVersion mismatch never goes live (§11.1).
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # Liveness deliberately uses /healthz: content being unreachable must degrade,
+          # not restart the pod in a loop (§9.1 rule 7).
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# Source: copperkeep/templates/audio.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperkeep-copperkeep-audio
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: audio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: audio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: audio
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: audio
+          image: ghcr.io/copperkeep/audio:2026.09.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+
+---
+# Source: copperkeep/templates/content.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperkeep-copperkeep-content
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: content
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: content
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: content
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: content
+          image: ghcr.io/copperkeep/content:2026.09.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+
+---
+# Source: copperkeep/templates/runtimes.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperkeep-copperkeep-runtimes
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: runtimes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: runtimes
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: runtimes
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: runtimes
+          image: ghcr.io/copperkeep/runtimes:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+
+---
+# Source: copperkeep/templates/tutor.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperkeep-copperkeep-tutor
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: tutor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: tutor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: tutor
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tutor
+          image: ghcr.io/copperkeep/tutor:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: COPPERKEEP_TUTOR_BASE_URL
+              value: "http://ollama:11434/v1"
+            - name: COPPERKEEP_TUTOR_MODEL
+              value: "qwen2.5-coder:7b"
+            - name: COPPERKEEP_TUTOR_TIMEOUT_SECONDS
+              value: "8"
+            - name: COPPERKEEP_TUTOR_LATENCY_GATE_ENABLED
+              value: "true"
+            - name: COPPERKEEP_TUTOR_PROBE_ON_START
+              value: "true"
+            - name: COPPERKEEP_TUTOR_LATENCY_BUDGET_SECONDS
+              value: "8"
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# Source: copperkeep/templates/web.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperkeep-copperkeep-web
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: web
+      annotations:
+        checksum/config: 9db515209765c19d447c785b162c6cb263670b6d267931b7227b919ea172eb6e
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: ghcr.io/copperkeep/web:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          volumeMounts:
+            # The SPA fetches /config.json at boot; it is a ConfigMap, never baked into
+            # the bundle (§9.1 rule 2).
+            - name: config-json
+              mountPath: /usr/share/nginx/html/config.json
+              subPath: config.json
+      volumes:
+        - name: config-json
+          configMap:
+            name: copperkeep-copperkeep-config
+
+---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: copperkeep-copperkeep-postgres
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: copperkeep-copperkeep-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "copperkeep"
+            - name: POSTGRES_USER
+              value: "copperkeep"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: postgres-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "copperkeep"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 8Gi
+
+---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copperkeep-copperkeep-backup
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres-backup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump
+              image: postgres:16-alpine
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: copperkeep-copperkeep-secrets
+                      key: postgres-password
+              command:
+                - /bin/sh
+                - -c
+                # Point the PVC at a NAS mount in production. A backup on the same disk
+                # as the database is not a backup — and the restore is documented in
+                # docs/operations/backup-restore.md, which you should follow once on a
+                # real machine before believing it.
+                - |
+                  set -eu
+                  stamp="$(date +%Y-%m-%d-%H%M)"
+                  pg_dump -h copperkeep-copperkeep-postgres \
+                    -U copperkeep \
+                    -d copperkeep \
+                    -Fc -f "/backups/copperkeep-${stamp}.dump"
+                  find /backups -name 'copperkeep-*.dump' -mtime +14 -delete
+                  ls -la /backups
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: copperkeep-copperkeep-backups
+
+---
+# Source: copperkeep/templates/review-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copperkeep-copperkeep-reviews
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: review-scheduler
+spec:
+  schedule: "0 5 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: schedule-reviews
+              image: curlimages/curl:8.10.1
+              env:
+                - name: ADMIN_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: copperkeep-copperkeep-secrets
+                      key: admin-token
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  curl -fsS -X POST \
+                    -H "X-Copperkeep-Admin-Token: ${ADMIN_TOKEN}" \
+                    http://copperkeep-copperkeep-api:8000/v1/admin/reviews/schedule
+
+---
+# Source: copperkeep/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: copperkeep-copperkeep
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+  annotations:
+spec:
+  tls:
+    - hosts:
+        - "learn.example.com"
+      secretName: copperkeep-tls
+  rules:
+    - host: "learn.example.com"
+      http:
+        paths:
+          - path: /v1
+            pathType: Prefix
+            backend:
+              service:
+                name: copperkeep-copperkeep-api
+                port:
+                  number: 8000
+          - path: /content
+            pathType: Prefix
+            backend:
+              service:
+                name: copperkeep-copperkeep-content
+                port:
+                  number: 8080
+          - path: /audio
+            pathType: Prefix
+            backend:
+              service:
+                name: copperkeep-copperkeep-audio
+                port:
+                  number: 8080
+          - path: /runtimes
+            pathType: Prefix
+            backend:
+              service:
+                name: copperkeep-copperkeep-runtimes
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: copperkeep-copperkeep-web
+                port:
+                  number: 8080
+---
+# Source: copperkeep/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: copperkeep-copperkeep-secrets
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+  annotations:
+    # A hook, and one that sorts ahead of everything that reads it.
+    #
+    # Helm applies pre-install hooks BEFORE the chart's ordinary resources. Postgres and
+    # the API both need these keys at startup, and the pre-upgrade migration Job needs
+    # them before either. Rendered as an ordinary resource, the Secret would not exist
+    # when the upgrade hook runs and the pod would sit in CreateContainerConfigError
+    # until the install timed out.
+    #
+    # before-hook-creation is safe despite the generated passwords: `lookup` above reads
+    # the live Secret at render time, so the values are captured in this manifest before
+    # anything is deleted. It does mean the Secret outlives `helm uninstall`, which
+    # matches the StatefulSet's PVC — both are deliberately kept.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+type: Opaque
+data:
+  session-secret: "Z29sZGVuLXNlc3Npb24tc2VjcmV0"
+  admin-token: "Z29sZGVuLWFkbWluLXRva2Vu"
+  
+  postgres-password: "Z29sZGVuLXBvc3RncmVzLXBhc3N3b3Jk"
+  bootstrap-admin-password: "Z29sZGVuLWFkbWluLXBhc3N3b3Jk"
+
+---
+# Source: copperkeep/templates/migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: copperkeep-copperkeep-migrate
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: migrate
+  annotations:
+    helm.sh/hook: post-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: ghcr.io/copperkeep/api:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+          command: ["copperkeep-migrate"]
+          env:
+            - name: COPPERKEEP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: postgres-password
+            - name: COPPERKEEP_DATABASE_URL
+              value: postgresql://copperkeep:$(COPPERKEEP_DATABASE_PASSWORD)@copperkeep-copperkeep-postgres:5432/copperkeep
+            - name: COPPERKEEP_APP_VERSION
+              value: "0.1.0"
+            - name: COPPERKEEP_LOG_LEVEL
+              value: "INFO"
+            - name: COPPERKEEP_CONTENT_BASE_URL
+              value: http://copperkeep-copperkeep-content:8080
+            - name: COPPERKEEP_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: session-secret
+            - name: COPPERKEEP_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: admin-token
+            - name: COPPERKEEP_COOKIE_SECURE
+              value: "true"
+            - name: COPPERKEEP_AUTH_BACKOFF_AFTER
+              value: "3"
+            - name: COPPERKEEP_AUTH_HARD_LOCK_AFTER
+              value: "10"
+            - name: COPPERKEEP_EVENT_WRITES_PER_MINUTE
+              value: "240"
+            - name: COPPERKEEP_SUBMISSION_MAX_BYTES
+              value: "64000"
+            - name: COPPERKEEP_MASTERY_THRESHOLD
+              value: "0.9"
+            - name: COPPERKEEP_MASTERY_MIN_OPPORTUNITIES
+              value: "3"
+            - name: COPPERKEEP_MASTERY_MIN_STEP_TYPES
+              value: "2"
+            - name: COPPERKEEP_REVIEW_INTERVALS_DAYS
+              value: "[3,7,21]"
+            - name: COPPERKEEP_TUTOR_ENABLED
+              value: "true"
+            - name: COPPERKEEP_TUTOR_BASE_URL
+              value: http://copperkeep-copperkeep-tutor:8000
+            - name: COPPERKEEP_TUTOR_TIMEOUT_SECONDS
+              value: "8"
+            - name: COPPERKEEP_BOOTSTRAP_ORG_SLUG
+              value: "home"
+            - name: COPPERKEEP_BOOTSTRAP_ORG_NAME
+              value: "Home"
+            - name: COPPERKEEP_BOOTSTRAP_ADMIN_USERNAME
+              value: "admin"
+            - name: COPPERKEEP_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: bootstrap-admin-password
+          resources:
+            requests: { memory: 128Mi, cpu: 100m }
+

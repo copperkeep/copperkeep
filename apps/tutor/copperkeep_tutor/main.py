@@ -58,14 +58,16 @@ requests_total = Counter("copperkeep_tutor_requests_total", "Guidance requests",
 _state = {"guidance_enabled": True, "p95_seconds": 0.0}
 
 
+# Field names are camelCase because they mirror the API's JSON contract exactly; this
+# service does not get to rename the wire format.
 class GuidanceRequest(BaseModel):
     language: str = "python"
-    readingTier: str = "grade3"  # noqa: N815 - matches the API's JSON contract
+    readingTier: str = "grade3"
     skills: list[str] = []
     instruction: str = ""
-    learnerCode: str = ""  # noqa: N815
+    learnerCode: str = ""
     failures: list[dict] = []
-    authoredHintsAlreadyShown: list[str] = []  # noqa: N815
+    authoredHintsAlreadyShown: list[str] = []
 
 
 async def _complete(prompt: str, timeout: float) -> str:
