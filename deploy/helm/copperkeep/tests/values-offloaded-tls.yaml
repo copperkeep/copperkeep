@@ -1,0 +1,19 @@
+# TLS terminated in front of the cluster — a reverse proxy, a load balancer, Cloudflare.
+#
+# The ingress itself carries no certificate, but the browser is still on HTTPS, so
+# cookies must stay Secure. This case exists because deriving that flag from
+# ingress.tls.enabled gets it exactly backwards here.
+ingress:
+  host: learn.example.com
+  className: traefik
+  tls:
+    enabled: false
+api:
+  cookieSecure: true
+  sessionSecret: golden-session-secret
+  adminToken: golden-admin-token
+  bootstrap:
+    adminPassword: golden-admin-password
+postgres:
+  mode: embedded
+  password: golden-postgres-password

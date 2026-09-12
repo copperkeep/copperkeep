@@ -217,6 +217,7 @@ spec:
                 secretKeyRef:
                   name: copperkeep-copperkeep-secrets
                   key: admin-token
+            
             - name: COPPERKEEP_COOKIE_SECURE
               value: "true"
             - name: COPPERKEEP_AUTH_BACKOFF_AFTER
@@ -718,6 +719,7 @@ spec:
                 secretKeyRef:
                   name: copperkeep-copperkeep-secrets
                   key: admin-token
+            
             - name: COPPERKEEP_COOKIE_SECURE
               value: "true"
             - name: COPPERKEEP_AUTH_BACKOFF_AFTER

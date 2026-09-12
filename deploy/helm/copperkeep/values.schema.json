@@ -80,6 +80,10 @@
         "replicas": { "type": "integer", "minimum": 1 },
         "logLevel": { "enum": ["DEBUG", "INFO", "WARNING", "ERROR"] },
         "resources": { "type": "object" },
+        "cookieSecure": {
+          "type": ["boolean", "null"],
+          "description": "Whether the browser is on HTTPS. null follows ingress.tls.enabled; set true when TLS is terminated in front of the cluster."
+        },
         "sessionSecret": { "type": "string" },
         "adminToken": { "type": "string" },
         "existingSecret": { "type": "string" },

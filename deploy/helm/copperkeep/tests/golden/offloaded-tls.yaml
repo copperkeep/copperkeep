@@ -26,6 +26,26 @@ data:
     }
 
 ---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copperkeep-copperkeep-backups
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres-backup
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 8Gi
+
+---
 # Source: copperkeep/templates/api.yaml
 apiVersion: v1
 kind: Service
@@ -99,6 +119,31 @@ spec:
     app.kubernetes.io/name: copperkeep
     app.kubernetes.io/instance: copperkeep
     app.kubernetes.io/component: content
+
+---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: copperkeep-copperkeep-postgres
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+  selector:
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/component: postgres
 
 ---
 # Source: copperkeep/templates/runtimes.yaml
@@ -196,9 +241,13 @@ spec:
             - name: http
               containerPort: 8000
           env:
-            
+            - name: COPPERKEEP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: postgres-password
             - name: COPPERKEEP_DATABASE_URL
-              value: "postgresql://copperkeep:secret@db.internal:5432/copperkeep"
+              value: postgresql://copperkeep:$(COPPERKEEP_DATABASE_PASSWORD)@copperkeep-copperkeep-postgres:5432/copperkeep
             - name: COPPERKEEP_APP_VERSION
               value: "0.1.0"
             - name: COPPERKEEP_LOG_LEVEL
@@ -519,6 +568,137 @@ spec:
             name: copperkeep-copperkeep-config
 
 ---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: copperkeep-copperkeep-postgres
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: copperkeep-copperkeep-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copperkeep
+      app.kubernetes.io/instance: copperkeep
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copperkeep
+        app.kubernetes.io/instance: copperkeep
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "copperkeep"
+            - name: POSTGRES_USER
+              value: "copperkeep"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: postgres-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "copperkeep"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 8Gi
+
+---
+# Source: copperkeep/templates/postgres.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copperkeep-copperkeep-backup
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+    app.kubernetes.io/component: postgres-backup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump
+              image: postgres:16-alpine
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: copperkeep-copperkeep-secrets
+                      key: postgres-password
+              command:
+                - /bin/sh
+                - -c
+                # Point the PVC at a NAS mount in production. A backup on the same disk
+                # as the database is not a backup — and the restore is documented in
+                # docs/operations/backup-restore.md, which you should follow once on a
+                # real machine before believing it.
+                - |
+                  set -eu
+                  stamp="$(date +%Y-%m-%d-%H%M)"
+                  pg_dump -h copperkeep-copperkeep-postgres \
+                    -U copperkeep \
+                    -d copperkeep \
+                    -Fc -f "/backups/copperkeep-${stamp}.dump"
+                  find /backups -name 'copperkeep-*.dump' -mtime +14 -delete
+                  ls -la /backups
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: copperkeep-copperkeep-backups
+
+---
 # Source: copperkeep/templates/review-cronjob.yaml
 apiVersion: batch/v1
 kind: CronJob
@@ -574,10 +754,7 @@ metadata:
     app.kubernetes.io/part-of: copperkeep
   annotations:
 spec:
-  tls:
-    - hosts:
-        - "learn.example.com"
-      secretName: copperkeep-tls
+  ingressClassName: traefik
   rules:
     - host: "learn.example.com"
       http:
@@ -650,6 +827,8 @@ type: Opaque
 data:
   session-secret: "Z29sZGVuLXNlc3Npb24tc2VjcmV0"
   admin-token: "Z29sZGVuLWFkbWluLXRva2Vu"
+  
+  postgres-password: "Z29sZGVuLXBvc3RncmVzLXBhc3N3b3Jk"
   bootstrap-admin-password: "Z29sZGVuLWFkbWluLXBhc3N3b3Jk"
 
 ---
@@ -696,9 +875,13 @@ spec:
             readOnlyRootFilesystem: false
           command: ["copperkeep-migrate"]
           env:
-            
+            - name: COPPERKEEP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: copperkeep-copperkeep-secrets
+                  key: postgres-password
             - name: COPPERKEEP_DATABASE_URL
-              value: "postgresql://copperkeep:secret@db.internal:5432/copperkeep"
+              value: postgresql://copperkeep:$(COPPERKEEP_DATABASE_PASSWORD)@copperkeep-copperkeep-postgres:5432/copperkeep
             - name: COPPERKEEP_APP_VERSION
               value: "0.1.0"
             - name: COPPERKEEP_LOG_LEVEL

@@ -69,6 +69,14 @@ runtimes:
 api:
   replicas: 1
   logLevel: INFO
+  # Whether session cookies carry the Secure flag — i.e. whether the BROWSER is on
+  # HTTPS, which is a different question from whether this ingress terminates TLS.
+  #
+  # null follows ingress.tls.enabled, which is right when TLS ends at this ingress. Set
+  # it to true when termination is offloaded to something in front of the cluster (a
+  # reverse proxy, a load balancer, Cloudflare): there, ingress.tls.enabled is false and
+  # the browser is still on HTTPS.
+  cookieSecure: null
   # The only thing that scales with load.
   resources:
     requests: { memory: 128Mi, cpu: 100m }
