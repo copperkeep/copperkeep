@@ -9,7 +9,7 @@
 
 name: copperkeep
 
-x-image-tag: &tag ${COPPERKEEP_VERSION:-0.1.1}
+x-image-tag: &tag ${COPPERKEEP_VERSION:-0.1.2}
 
 services:
   proxy:
@@ -23,7 +23,7 @@ services:
     depends_on: [web, content, runtimes, api]
 
   web:
-    image: ghcr.io/copperkeep/web:${COPPERKEEP_VERSION:-0.1.1}
+    image: ghcr.io/copperkeep/web:${COPPERKEEP_VERSION:-0.1.2}
     restart: unless-stopped
     volumes:
       # The SPA fetches this at boot. Same keys as the chart's ConfigMap.
@@ -38,11 +38,11 @@ services:
     restart: unless-stopped
 
   runtimes:
-    image: ghcr.io/copperkeep/runtimes:${COPPERKEEP_VERSION:-0.1.1}
+    image: ghcr.io/copperkeep/runtimes:${COPPERKEEP_VERSION:-0.1.2}
     restart: unless-stopped
 
   migrate:
-    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.1}
+    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.2}
     command: ["copperkeep-migrate"]
     restart: "no"
     environment:
@@ -52,7 +52,7 @@ services:
         condition: service_healthy
 
   api:
-    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.1}
+    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.2}
     restart: unless-stopped
     environment:
       COPPERKEEP_DATABASE_URL: postgresql://copperkeep:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/copperkeep
