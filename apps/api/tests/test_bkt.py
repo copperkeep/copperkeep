@@ -22,7 +22,9 @@ def test_correct_answers_raise_the_estimate():
 
 
 def test_semantic_failure_lowers_the_estimate():
-    p = update(0.8, Observation(correct=False, step_type="free-code", failure_kind="semantic"), PARAMS)
+    p = update(
+        0.8, Observation(correct=False, step_type="free-code", failure_kind="semantic"), PARAMS
+    )
     assert p < 0.8
 
 
