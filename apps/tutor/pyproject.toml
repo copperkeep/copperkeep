@@ -1,6 +1,6 @@
 [project]
 name = "copperkeep-tutor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Optional LLM guidance service — holds the endpoint connection and the prompts"
 requires-python = ">=3.12"
 dependencies = [
