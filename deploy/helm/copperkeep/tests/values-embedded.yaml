@@ -1,0 +1,12 @@
+# Golden-render inputs. Secrets are fixed so the output is deterministic — the point of
+# these files is that an unintended manifest change shows up as a reviewable diff.
+ingress:
+  host: learn.example.com
+api:
+  sessionSecret: golden-session-secret
+  adminToken: golden-admin-token
+  bootstrap:
+    adminPassword: golden-admin-password
+postgres:
+  mode: embedded
+  password: golden-postgres-password

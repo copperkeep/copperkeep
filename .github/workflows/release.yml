@@ -1,0 +1,140 @@
+name: release
+
+# Images and the chart are released by the same job, so a chart version that exists
+# always has images that exist.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (without the leading v)"
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: copperkeep
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # The chart version tracks the app's semver. A mismatch here means a customer
+          # would install a chart whose images do not exist.
+          chart="$(grep '^version:' deploy/helm/copperkeep/Chart.yaml | awk '{print $2}')"
+          app="$(grep '^appVersion:' deploy/helm/copperkeep/Chart.yaml | awk '{print $2}' | tr -d '"')"
+          if [ "$chart" != "$version" ] || [ "$app" != "$version" ]; then
+            echo "::error::Chart.yaml is version=$chart appVersion=$app but the release is $version"
+            exit 1
+          fi
+
+  images:
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: web
+            context: .
+            file: apps/web/Dockerfile
+          - name: api
+            context: apps/api
+            file: apps/api/Dockerfile
+          - name: tutor
+            context: apps/tutor
+            file: apps/tutor/Dockerfile
+          - name: runtimes
+            context: .
+            file: images/runtimes/Dockerfile
+          # Base images: the curriculum repo builds the shipping content and audio
+          # images FROM these, so the nginx config stays in this repo.
+          - name: content-base
+            context: .
+            file: images/content/Dockerfile
+          - name: audio-base
+            context: .
+            file: images/audio/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          # A Pi 5 is a plausible target; an amd64-only image discovered at a customer
+          # site is a bad day.
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.name }}:${{ needs.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - uses: sigstore/cosign-installer@v3
+
+      - name: Sign the image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes \
+            "${REGISTRY}/${NAMESPACE}/${{ matrix.name }}@${DIGEST}"
+
+  chart:
+    needs: [version, images]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" \
+            | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      # Same registry, same credentials, same signing as every image — one mirroring
+      # tool for an air-gapped site instead of two.
+      - name: Package and push
+        run: |
+          helm package deploy/helm/copperkeep --destination dist
+          helm push "dist/copperkeep-${{ needs.version.outputs.version }}.tgz" \
+            "oci://${REGISTRY}/${NAMESPACE}/charts"
+
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign the chart
+        run: |
+          cosign sign --yes \
+            "${REGISTRY}/${NAMESPACE}/charts/copperkeep:${{ needs.version.outputs.version }}"

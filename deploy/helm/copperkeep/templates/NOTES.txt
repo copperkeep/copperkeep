@@ -1,0 +1,38 @@
+Copperkeep {{ .Chart.AppVersion }} is installed as {{ .Release.Name }}.
+
+  URL       https://{{ .Values.ingress.host }}
+  Postgres  {{ .Values.postgres.mode }}
+  Tutor     {{ if .Values.tutor.enabled }}enabled{{ else }}disabled (not deployed){{ end }}
+
+{{- if .Values.api.bootstrap.enabled }}
+
+Your first adult account:
+
+  Username  {{ .Values.api.bootstrap.adminUsername }}
+  Password  kubectl -n {{ .Release.Namespace }} get secret {{ include "copperkeep.secretName" . }} \
+              -o jsonpath='{.data.bootstrap-admin-password}' | base64 -d; echo
+
+It is created only if no org exists yet, and an existing account is never overwritten.
+{{- end }}
+
+Three things to check before handing this to a learner:
+
+1. Cross-origin isolation. Open https://{{ .Values.ingress.host }}/#conformance and run
+   the suite. If "crossOriginIsolated" is false, interrupt() cannot work and every
+   infinite loop kills the worker instead. Something in front of the web service is
+   stripping COOP/COEP — set ingress.crossOriginIsolationHeaders=true or fix the proxy.
+
+2. TLS. {{ if .Values.ingress.tls.enabled }}Confirm the certificate resolves. A private IP over HTTP is not a
+   secure context, so SharedArrayBuffer, service workers and storage.persist() all fail.{{ else }}ingress.tls.enabled is FALSE. SharedArrayBuffer, service workers and
+   navigator.storage.persist() will not work. This is not a production configuration.{{ end }}
+
+{{- if and (eq .Values.postgres.mode "embedded") .Values.postgres.backup.enabled }}
+
+3. Restore. Nightly pg_dump runs at {{ .Values.postgres.backup.schedule }} into a PVC. On-premise means
+   nobody else is doing this — follow docs/operations/backup-restore.md once, on this
+   machine, before you need it. Point the backup PVC at a NAS: a backup on the same disk
+   as the database is not a backup.
+{{- else if eq .Values.postgres.mode "embedded" }}
+
+3. Backups are DISABLED. Nothing is dumping this database.
+{{- end }}

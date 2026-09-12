@@ -1,0 +1,16 @@
+{
+  "name": "@copperkeep/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./tokens.css",
+    "./components.css": "./components.css"
+  },
+  "files": ["tokens.css", "components.css"],
+  "scripts": {
+    "build": "echo 'css only, nothing to build'",
+    "typecheck": "echo 'css only'",
+    "test": "node ../../scripts/check-contrast.mjs"
+  }
+}

@@ -1,0 +1,79 @@
+{{- if .Values.ingress.enabled }}
+{{/*
+One public origin, path-routed. The services stay separately imaged and versioned; only
+the origin is shared (§3.1).
+
+Never publish a second port to the browser. It breaks cross-origin isolation — and with
+it interrupt() — and reintroduces CORS.
+
+Order matters: the specific prefixes must precede "/", which catches the SPA.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "copperkeep.fullname" . }}
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.ingress.crossOriginIsolationHeaders }}
+    # Only needed when something in front of this strips the headers the web service
+    # already sets. Syntax is ingress-nginx specific.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Cross-Origin-Opener-Policy: same-origin";
+      more_set_headers "Cross-Origin-Embedder-Policy: require-corp";
+    {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /v1
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "copperkeep.fullname" . }}-api
+                port:
+                  number: 8000
+          - path: /content
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "copperkeep.fullname" . }}-content
+                port:
+                  number: 8080
+          {{- if .Values.audio.enabled }}
+          - path: /audio
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "copperkeep.fullname" . }}-audio
+                port:
+                  number: 8080
+          {{- end }}
+          - path: /runtimes
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "copperkeep.fullname" . }}-runtimes
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "copperkeep.fullname" . }}-web
+                port:
+                  number: 8080
+{{- end }}

@@ -1,0 +1,15 @@
+# tutor.enabled flips a whole service into existence; it deserves its own golden.
+ingress:
+  host: learn.example.com
+api:
+  sessionSecret: golden-session-secret
+  adminToken: golden-admin-token
+  bootstrap:
+    adminPassword: golden-admin-password
+postgres:
+  mode: embedded
+  password: golden-postgres-password
+tutor:
+  enabled: true
+  features:
+    guidance: true

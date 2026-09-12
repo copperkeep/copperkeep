@@ -1,0 +1,11 @@
+# A managed instance. The API takes nothing but a connection string.
+ingress:
+  host: learn.example.com
+api:
+  sessionSecret: golden-session-secret
+  adminToken: golden-admin-token
+  bootstrap:
+    adminPassword: golden-admin-password
+postgres:
+  mode: external
+  externalUrl: postgresql://copperkeep:secret@db.internal:5432/copperkeep

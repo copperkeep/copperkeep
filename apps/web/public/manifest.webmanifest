@@ -1,0 +1,10 @@
+{
+  "name": "Copperkeep",
+  "short_name": "Copperkeep",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080b12",
+  "theme_color": "#080b12",
+  "description": "Learn to program. Installing this app keeps the Python runtime cached between lessons.",
+  "icons": []
+}

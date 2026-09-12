@@ -1,0 +1,40 @@
+{{- if .Values.reviewScheduler.enabled }}
+{{/*
+Skills decay; each mastered skill resurfaces at 3, 7 and 21 days. This calls the API
+rather than touching the database, and it is a CronJob rather than an in-process timer
+because a timer would fire once per replica (§8).
+*/}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-reviews
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: review-scheduler
+spec:
+  schedule: {{ .Values.reviewScheduler.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: schedule-reviews
+              image: curlimages/curl:8.10.1
+              env:
+                - name: ADMIN_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "copperkeep.secretName" . }}
+                      key: admin-token
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  curl -fsS -X POST \
+                    -H "X-Copperkeep-Admin-Token: ${ADMIN_TOKEN}" \
+                    http://{{ include "copperkeep.fullname" . }}-api:8000/v1/admin/reviews/schedule
+{{- end }}

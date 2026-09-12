@@ -1,0 +1,41 @@
+{{/*
+Migrations run as a Helm hook, never on API startup — otherwise deploy order and replica
+count start mattering (§9.1 rule 4).
+
+hook-weight -5 puts this ahead of the Deployments; before-hook-creation keeps one Job
+per release rather than a graveyard.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-migrate
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "copperkeep.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrate
+          image: {{ include "copperkeep.image" (dict "root" . "name" "api" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+          command: ["copperkeep-migrate"]
+          env:
+            {{- include "copperkeep.apiEnv" . | nindent 12 }}
+          resources:
+            requests: { memory: 128Mi, cpu: 100m }

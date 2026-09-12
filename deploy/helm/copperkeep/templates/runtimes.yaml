@@ -1,0 +1,2 @@
+{{/* Pyodide and the vendored wheels. Downloaded once per device, then Cache Storage. */}}
+{{- include "copperkeep.staticService" (dict "root" . "name" "runtimes" "cfg" .Values.runtimes) }}

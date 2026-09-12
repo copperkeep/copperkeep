@@ -1,0 +1,92 @@
+/* Copperkeep design tokens — plan §13.2.
+ *
+ * Two themes, one system. Dark is the house style adopted verbatim; light is the paper
+ * the terminal was designed on. Neither is an inversion of the other: in dark, up is
+ * lighter; in light, up is whiter and wells sink into tint.
+ *
+ * A component that names a hex is a bug. Every value below is measured for contrast by
+ * scripts/check-contrast.mjs, which runs in CI, so a token edit cannot silently regress.
+ */
+
+:root,
+[data-theme="light"] {
+  --ink-900: #f6f8fb;
+  --ink-850: #eff2f7;
+  --ink-800: #e7ebf2;
+  --ink-700: #ffffff;
+  --ink-600: #ffffff;
+  --line: #d8dee9;
+  --line-strong: #b9c3d3;
+  --fg: #0f1626;
+  --fg-muted: #3f4d66;
+  --fg-dim: #5a6a84;
+  --accent: #0b7d3f;
+  --accent-warn: #b45309;
+  --accent-alt: #2a5bd7;
+  --accent-hot: #c2184a;
+  --c1: #4a78b3;
+  --c2: #1f8f49;
+  --c3: #158f87;
+  --c4: #c95f0e;
+  --c5: #9c7814;
+  --c6: #c43d78;
+  --c7: #8b47b8;
+  --raise: 0 1px 2px rgba(15, 22, 38, 0.08);
+  --on-accent: #ffffff;
+}
+
+[data-theme="dark"] {
+  --ink-900: #080b12;
+  --ink-850: #0b1020;
+  --ink-800: #111725;
+  --ink-700: #161e30;
+  --ink-600: #1e2839;
+  --line: #232e44;
+  --line-strong: #33415c;
+  --fg: #e8ecf3;
+  --fg-muted: #9fb1c7;
+  --fg-dim: #6f8098;
+  --accent: #00e06a;
+  --accent-warn: #ff9d2e;
+  --accent-alt: #5b8cff;
+  --accent-hot: #f0466e;
+  --c1: #a9c6e8;
+  --c2: #2fd16b;
+  --c3: #31d0c6;
+  --c4: #f97d26;
+  --c5: #efc03a;
+  --c6: #f0619a;
+  --c7: #c46be8;
+  --raise: none;
+  --on-accent: #04130a;
+}
+
+/* The signature of light mode: code stays in the terminal. The editor and output panes
+ * sit on --ink-800's dark value in BOTH themes. The prose goes to paper; the code never
+ * does — which makes the prose/code boundary structure rather than a border. */
+:root {
+  --code-ground: #111725;
+  --code-fg: #e8ecf3;
+  --code-dim: #6f8098;
+  --code-line: #232e44;
+  --code-k: #a9c6e8;
+  --code-s: #31d0c6;
+  --code-n: #efc03a;
+  --code-f: #c46be8;
+  --code-c: #6f8098;
+
+  --font-display: "Inter Tight", Inter, system-ui, -apple-system, sans-serif;
+  --font-body: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --tap-min: 44px;
+  --measure: 60ch;
+  --radius: 8px;
+}
+
+/* The dyslexia toggle swaps prose only. JetBrains Mono stays for code; its 0/O and
+ * l/1/I distinctions are already the point. */
+[data-font="dyslexia"] {
+  --font-body: "Atkinson Hyperlegible", Inter, system-ui, sans-serif;
+  --font-display: "Atkinson Hyperlegible", "Inter Tight", system-ui, sans-serif;
+}

@@ -1,0 +1,11 @@
+{
+  "apiBaseUrl": "/v1",
+  "contentBaseUrl": "/content",
+  "audioBaseUrl": "/audio",
+  "runtimesBaseUrl": "/runtimes",
+  "pyodideIndexUrl": "/runtimes/pyodide/v0.26.4/",
+  "micropipIndexUrl": "/runtimes/wheels/",
+  "appVersion": "0.1.0",
+  "defaultTheme": "auto",
+  "tutorEnabled": false
+}

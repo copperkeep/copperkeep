@@ -1,0 +1,13 @@
+# CloudNativePG or similar: the chart renders no Postgres templates at all and takes a
+# connection string from the operator's generated secret.
+ingress:
+  host: learn.example.com
+api:
+  sessionSecret: golden-session-secret
+  adminToken: golden-admin-token
+  bootstrap:
+    adminPassword: golden-admin-password
+postgres:
+  mode: operator
+  externalUrlSecret: copperkeep-db-app
+  externalUrlSecretKey: uri

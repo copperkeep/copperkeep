@@ -1,0 +1,136 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Path filtering from the first week, not the tenth: this is the cost a monorepo asks
+  # you to pay in exchange for contract changes being one atomic commit.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      tutor: ${{ steps.filter.outputs.tutor }}
+      web: ${{ steps.filter.outputs.web }}
+      deploy: ${{ steps.filter.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - '.github/workflows/ci.yml'
+            tutor:
+              - 'apps/tutor/**'
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'scripts/check-contrast.mjs'
+            deploy:
+              - 'deploy/**'
+              - 'images/**'
+              - 'apps/**'
+
+  api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - working-directory: apps/api
+        run: |
+          pip install -e '.[dev]'
+          ruff check .
+          pytest -q
+
+  tutor:
+    needs: changes
+    if: needs.changes.outputs.tutor == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - working-directory: apps/tutor
+        run: |
+          pip install -e '.[dev]'
+          ruff check .
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm -r typecheck
+      - run: pnpm --filter @copperkeep/web build
+      # A token edit must not silently regress contrast.
+      - run: node scripts/check-contrast.mjs
+      # Egress is permitted for infrastructure; the application should not quietly
+      # acquire a Google Fonts import or an analytics beacon.
+      - run: scripts/check-determinism.sh apps/web/dist
+
+  chart:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/copperkeep
+      - run: helm lint deploy/helm/copperkeep --values deploy/helm/copperkeep/tests/values-tutor.yaml
+      # Every Postgres mode and each tutor state, diffed against golden files.
+      - run: scripts/helm-golden.sh
+      # A values.yaml that its own schema rejects is a trap for the next person.
+      - name: Validate values.yaml against values.schema.json
+        run: |
+          pip install check-jsonschema
+          python - <<'PY' > /tmp/values.json
+          import json, yaml
+          print(json.dumps(yaml.safe_load(open("deploy/helm/copperkeep/values.yaml"))))
+          PY
+          check-jsonschema --schemafile deploy/helm/copperkeep/values.schema.json /tmp/values.json
+
+  smoke:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the images this commit would ship
+        run: |
+          docker build -t copperkeep/api:ci -f apps/api/Dockerfile apps/api
+          docker build -t copperkeep/web:ci -f apps/web/Dockerfile .
+          docker build -t copperkeep/content-base:ci -f images/content/Dockerfile .
+      # Both deployment paths get the same assertions. Two descriptions of one system
+      # diverge quietly otherwise.
+      - name: Compose smoke test
+        run: scripts/smoke-compose.sh
+
+      - name: Install k3d
+        run: curl -fsSL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+      - uses: azure/setup-helm@v4
+
+      - name: Chart smoke test
+        run: scripts/smoke-k3d.sh

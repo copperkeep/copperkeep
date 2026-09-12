@@ -1,0 +1,118 @@
+/* Layout only. Every colour comes from @copperkeep/ui tokens. */
+
+.shell {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 24px 20px 64px;
+}
+
+.bar {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.bar h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg .tap {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 13px;
+  padding: 0 14px;
+}
+
+.seg .tap[aria-pressed="true"] {
+  background: var(--ink-700);
+  color: var(--fg);
+  box-shadow: var(--raise);
+}
+
+.seg .tap + .tap {
+  border-left: 1px solid var(--line-strong);
+}
+
+/* Three panes on desktop; the editor and output keep the terminal ground in both
+ * themes, so the prose/code boundary is structure rather than a border. */
+.lesson {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.1fr) minmax(280px, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.pane {
+  min-width: 0;
+}
+
+.pane--read {
+  background: var(--ink-700);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--raise);
+}
+
+.editor-host {
+  height: 340px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border-left: 3px solid var(--accent-alt);
+}
+
+.btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  min-height: var(--tap-min);
+  margin: 6px 0 14px;
+  padding: 0 12px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--ink-900);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+}
+
+/* Tablet: the three panes become tabs. */
+@media (max-width: 1023px) {
+  .lesson {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-host {
+    height: 260px;
+  }
+}
