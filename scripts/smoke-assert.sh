@@ -13,15 +13,20 @@ ADMIN_PASSWORD="${2:?admin password required}"
 
 fail() { echo "SMOKE FAILED: $*" >&2; exit 1; }
 
-echo "--- the API is up and considers itself ready"
+echo "--- the origin is up"
 for _ in $(seq 1 60); do
-  curl -fsS "$BASE/healthz" > /dev/null 2>&1 && break
+  curl -fsS "$BASE/" > /dev/null 2>&1 && break
   sleep 2
 done
-curl -fsS "$BASE/healthz" > /dev/null || fail "healthz never came up"
-# Ready means the database answers and the loaded curriculum is compatible.
-curl -fsS "$BASE/readyz" | grep -q '"ready":true' \
-  || fail "readyz: $(curl -fsS "$BASE/readyz")"
+curl -fsS "$BASE/" > /dev/null || fail "the origin never came up"
+
+echo "--- the API is routed and answering"
+# /readyz and /healthz are deliberately NOT public: the chart's Ingress routes /v1 and
+# the static prefixes, nothing else. Probes are for the kubelet. An unauthenticated 401
+# from a real endpoint is the honest public proof that the API is reachable — readiness
+# itself is gated by `helm --wait` and by Compose's healthchecks.
+code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/v1/me")"
+[ "$code" = "401" ] || fail "expected 401 from /v1/me, got $code"
 
 echo "--- the document carries the cross-origin isolation headers"
 # The one thing that silently disables interrupt() if a config edit drops it. Cheap to
