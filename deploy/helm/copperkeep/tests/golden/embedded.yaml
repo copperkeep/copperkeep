@@ -1,25 +1,4 @@
 ---
-# Source: copperkeep/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: copperkeep-copperkeep-secrets
-  labels:
-    helm.sh/chart: copperkeep-0.1.0
-    app.kubernetes.io/name: copperkeep
-    app.kubernetes.io/instance: copperkeep
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: copperkeep
-type: Opaque
-data:
-  session-secret: "Z29sZGVuLXNlc3Npb24tc2VjcmV0"
-  admin-token: "Z29sZGVuLWFkbWluLXRva2Vu"
-  
-  postgres-password: "Z29sZGVuLXBvc3RncmVzLXBhc3N3b3Jk"
-  bootstrap-admin-password: "Z29sZGVuLWFkbWluLXBhc3N3b3Jk"
-
----
 # Source: copperkeep/templates/configmap-config-json.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -818,6 +797,43 @@ spec:
                 port:
                   number: 8080
 ---
+# Source: copperkeep/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: copperkeep-copperkeep-secrets
+  labels:
+    helm.sh/chart: copperkeep-0.1.0
+    app.kubernetes.io/name: copperkeep
+    app.kubernetes.io/instance: copperkeep
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: copperkeep
+  annotations:
+    # A hook, and one that sorts ahead of everything that reads it.
+    #
+    # Helm applies pre-install hooks BEFORE the chart's ordinary resources. Postgres and
+    # the API both need these keys at startup, and the pre-upgrade migration Job needs
+    # them before either. Rendered as an ordinary resource, the Secret would not exist
+    # when the upgrade hook runs and the pod would sit in CreateContainerConfigError
+    # until the install timed out.
+    #
+    # before-hook-creation is safe despite the generated passwords: `lookup` above reads
+    # the live Secret at render time, so the values are captured in this manifest before
+    # anything is deleted. It does mean the Secret outlives `helm uninstall`, which
+    # matches the StatefulSet's PVC — both are deliberately kept.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+type: Opaque
+data:
+  session-secret: "Z29sZGVuLXNlc3Npb24tc2VjcmV0"
+  admin-token: "Z29sZGVuLWFkbWluLXRva2Vu"
+  
+  postgres-password: "Z29sZGVuLXBvc3RncmVzLXBhc3N3b3Jk"
+  bootstrap-admin-password: "Z29sZGVuLWFkbWluLXBhc3N3b3Jk"
+
+---
 # Source: copperkeep/templates/migrate-job.yaml
 apiVersion: batch/v1
 kind: Job
@@ -832,7 +848,7 @@ metadata:
     app.kubernetes.io/part-of: copperkeep
     app.kubernetes.io/component: migrate
   annotations:
-    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook: post-install,pre-upgrade
     helm.sh/hook-weight: "-5"
     helm.sh/hook-delete-policy: before-hook-creation
 spec:
