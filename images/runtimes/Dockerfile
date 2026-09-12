@@ -20,7 +20,8 @@ RUN mkdir -p pyodide/v${PYODIDE_VERSION} wheels \
 COPY images/runtimes/wheels/ /out/wheels/
 RUN printf '<!DOCTYPE html><html><body><h1>wheels</h1></body></html>' > /out/wheels/index.html
 
-FROM nginx:1.27-alpine
+# Unprivileged nginx: the stock image runs as root and the chart sets runAsNonRoot.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY images/runtimes/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=fetch /out /usr/share/nginx/html
 EXPOSE 8080

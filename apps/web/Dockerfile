@@ -16,7 +16,10 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm --filter @copperkeep/web build
 
-FROM nginx:1.27-alpine
+# Unprivileged nginx: the stock image runs as root, and the chart's pod security context
+# sets runAsNonRoot, which rejects it outright. This variant runs as uid 101 and already
+# listens on 8080, which is the port every conf here declares.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080
