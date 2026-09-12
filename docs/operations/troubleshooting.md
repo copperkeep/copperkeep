@@ -28,6 +28,21 @@ Check, in order:
 - `"database": false` — Postgres. Check the credentials secret and that the migration Job
   completed.
 
+## `helm install` fails: "PVC is not Bound"
+
+The backup claim. Most storage classes — k3s `local-path`, the default EBS class —
+bind `WaitForFirstConsumer`, and nothing mounts that claim until the nightly CronJob
+runs, so it sits Pending and `--wait` gives up.
+
+Point it at a claim you already have, which is the better answer anyway:
+
+```sh
+--set postgres.backup.existingClaim=copperkeep-backups-nas
+```
+
+A chart-created claim lands on the same storage as the database, and a backup on the
+same disk as the database is not a backup.
+
 ## A learner is locked out
 
 By design: ten failed PIN attempts hard-locks a learner account, and only the owning

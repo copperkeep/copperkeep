@@ -35,6 +35,10 @@ helm install copperkeep "$ROOT/deploy/helm/copperkeep" \
   --set audio.enabled=false \
   --set ingress.enabled=false \
   --set ingress.tls.enabled=false \
+  `# k3d's local-path class binds WaitForFirstConsumer, so a backup PVC nothing mounts` \
+  `# would stay Pending and fail --wait. There is nothing to back up in a cluster that` \
+  `# exists for ninety seconds.` \
+  --set postgres.backup.enabled=false \
   --wait --timeout 10m
 
 # No ingress in the smoke cluster: the assertions need one origin, so nginx in the web

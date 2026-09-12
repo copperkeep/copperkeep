@@ -151,6 +151,14 @@ postgres:
     enabled: true
     schedule: "0 2 * * *"
     retentionDays: 14
+    # Strongly preferred: a claim you already back on a NAS. A backup on the same disk
+    # as the database is not a backup, and a chart-created claim lands on the same
+    # storage class the database uses.
+    #
+    # It also avoids a footgun: on a WaitForFirstConsumer storage class (k3s local-path,
+    # most cloud defaults) a chart-created claim nothing mounts stays Pending, and
+    # `helm install --wait` fails on it.
+    existingClaim: ""
     storage:
       size: 8Gi
       className: ""
