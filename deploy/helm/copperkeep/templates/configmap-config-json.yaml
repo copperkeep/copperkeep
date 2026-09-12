@@ -26,4 +26,4 @@ data:
         "tutorEnabled" .Values.tutor.enabled
       }}
     {{- $merged := mergeOverwrite $config .Values.config.extra }}
-    {{ toPrettyJson $merged | nindent 4 }}
+    {{- toPrettyJson $merged | nindent 4 }}
