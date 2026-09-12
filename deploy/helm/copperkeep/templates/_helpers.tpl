@@ -90,8 +90,22 @@ nothing else, so the mode is purely a chart concern (§9.3).
     secretKeyRef:
       name: {{ include "copperkeep.secretName" . }}
       key: admin-token
+{{/*
+Whether the BROWSER is on HTTPS — which is not the same question as whether this
+ingress terminates TLS. With termination offloaded to something in front of the
+cluster (Nginx Proxy Manager, a load balancer, Cloudflare), ingress.tls.enabled is
+false while the browser is still on HTTPS, and deriving the flag from it would quietly
+downgrade every session cookie.
+
+Defaults to ingress.tls.enabled; set api.cookieSecure to state it outright. An explicit
+false is honoured, so `default` is the wrong tool here.
+*/}}
+{{- $cookieSecure := .Values.ingress.tls.enabled -}}
+{{- if not (kindIs "invalid" .Values.api.cookieSecure) -}}
+{{- $cookieSecure = .Values.api.cookieSecure -}}
+{{- end }}
 - name: COPPERKEEP_COOKIE_SECURE
-  value: {{ .Values.ingress.tls.enabled | quote }}
+  value: {{ $cookieSecure | quote }}
 - name: COPPERKEEP_AUTH_BACKOFF_AFTER
   value: {{ .Values.api.auth.backoffAfter | quote }}
 - name: COPPERKEEP_AUTH_HARD_LOCK_AFTER

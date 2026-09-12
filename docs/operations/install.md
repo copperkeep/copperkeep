@@ -28,6 +28,45 @@ costs nothing at a customer site:
 Certificates renew over the internet; traffic never leaves the building; nothing is
 installed on any device. No internal CA, no root certificate on twenty tablets.
 
+## If TLS is terminated in front of the cluster
+
+A reverse proxy, a load balancer or Cloudflare doing the certificate is fine — the
+secure context is judged on what the *browser* sees, not on where TLS ends.
+
+```sh
+helm install copperkeep oci://ghcr.io/copperkeep/charts/copperkeep \
+  --set ingress.host=learn.example.com \
+  --set ingress.className=traefik \
+  --set ingress.tls.enabled=false \
+  --set api.cookieSecure=true
+```
+
+`api.cookieSecure` is the part people miss. It defaults to `ingress.tls.enabled`, which
+is right when TLS ends at the ingress and exactly wrong when it ends in front of it:
+without setting it, every session cookie silently loses its Secure flag while the
+browser is still on HTTPS.
+
+Two things to check afterwards, because both fail quietly:
+
+- **The isolation headers reach the browser.** They are set by the web service on the
+  document, and nginx-family proxies pass them through, but verify rather than assume:
+
+  ```sh
+  curl -sI https://learn.example.com | grep -i cross-origin
+  ```
+
+  You want `same-origin` and `require-corp`. Then open `/#conformance` and confirm it
+  reports `crossOriginIsolated: true`.
+
+- **All five paths reach the right service.** If you replace the chart's Ingress with a
+  hand-written IngressRoute, it has to route `/v1`, `/content`, `/audio`, `/runtimes`
+  and `/` — miss one and the origin is split, which kills isolation and reintroduces
+  CORS. The chart's own Ingress already does this and works with k3s Traefik via
+  `ingress.className=traefik`, which is fewer moving parts.
+
+And note that Let's Encrypt cannot reach a private IP, so the certificate needs a
+**DNS-01** challenge wherever you terminate.
+
 ## Helm
 
 ```sh
