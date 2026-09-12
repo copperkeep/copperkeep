@@ -45,3 +45,11 @@ trap cleanup EXIT
 
 docker compose up -d
 "$ROOT/scripts/smoke-assert.sh" "http://localhost:8443" "$ADMIN_PASSWORD"
+
+# The API-level assertions above cannot see a dead Run button or a lesson that leads
+# nowhere. Opt in with COPPERKEEP_E2E=1 so this script stays usable without browsers
+# installed.
+if [ "${COPPERKEEP_E2E:-0}" = "1" ]; then
+  COPPERKEEP_USERNAME=admin COPPERKEEP_PASSWORD="$ADMIN_PASSWORD" \
+    "$ROOT/scripts/e2e.sh" "http://localhost:8443"
+fi

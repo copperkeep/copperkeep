@@ -47,6 +47,32 @@ not want to find in Phase 5.
 3. Nothing above the adapter is language-aware. If you find yourself editing `apps/web`
    to add a language, the interface is wrong and that is worth fixing first.
 
+## Browser tests
+
+```sh
+cd e2e && pnpm exec playwright install --with-deps chromium   # once
+make e2e                                    # against the local Compose stack
+make e2e BASE=https://copperkeep.example.com    # against a deployed instance
+```
+
+These exist because every user-visible bug this project has shipped lived in a layer the
+API-level smoke test cannot see, and each one was found by a person using the app rather
+than by CI:
+
+| What shipped | Why the tests missed it |
+|---|---|
+| Run and Check silently did nothing | The runtime was disposed the moment it was stored. The conformance page hid it — its first case calls `init()`, rebuilding the worker |
+| `/content` 404'd through the chart's Ingress | Both smoke proxies stripped path prefixes, and k3d installed with `ingress.enabled=false`, so the real Ingress was never under test |
+| An infinite loop scored as a runtime error | No automated run had ever let the wall clock expire in a browser with working `SharedArrayBuffer` |
+| Most of the curriculum was unreachable | Nothing ever finished a lesson |
+
+Each spec now names the bug it guards. When adding one, prefer asserting what a learner
+sees — output text, a graded row, a way forward — over internal state.
+
+Note the default target is `http://localhost:8443`. `localhost` is a secure context even
+over plain HTTP, so `SharedArrayBuffer` is available and `interrupt()` is genuinely
+exercised rather than skipped.
+
 ## Testing
 
 ```sh

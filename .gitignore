@@ -18,3 +18,7 @@ deploy/compose/.env
 images/runtimes/vendor/
 
 .DS_Store
+
+# playwright
+e2e/playwright-report/
+e2e/test-results/
