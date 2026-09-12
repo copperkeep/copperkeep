@@ -1,0 +1,29 @@
+{{/*
+The SPA's /config.json. Content, audio and runtime URLs are configuration, not imports —
+that is what lets the curriculum and Pyodide version independently of the web build
+(§9.1 rule 3).
+
+Compose renders the same document from the same keys. Neither deployment invents its
+own, which is the first of the two defences against drift.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-config
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {{- $config := dict
+        "apiBaseUrl" "/v1"
+        "contentBaseUrl" "/content"
+        "audioBaseUrl" "/audio"
+        "runtimesBaseUrl" "/runtimes"
+        "pyodideIndexUrl" "/runtimes/pyodide/v0.26.4/"
+        "micropipIndexUrl" "/runtimes/wheels/"
+        "appVersion" .Chart.AppVersion
+        "defaultTheme" .Values.config.defaultTheme
+        "tutorEnabled" .Values.tutor.enabled
+      }}
+    {{- $merged := mergeOverwrite $config .Values.config.extra }}
+    {{ toPrettyJson $merged | nindent 4 }}

@@ -1,0 +1,156 @@
+{{- if eq .Values.postgres.mode "embedded" }}
+{{/*
+No subchart. A StatefulSet, a PVC, a Service and a pg_dump CronJob is well under a
+hundred lines you can read in one sitting — and `embedded` exists precisely so that the
+restore path is something you understand (§9.7).
+
+`operator` and `external` modes render no Postgres templates whatsoever.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-postgres
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "copperkeep.fullname" . }}-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "copperkeep.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "copperkeep.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "copperkeep.secretName" . }}
+                  key: postgres-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgres.username | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources: {{- toYaml .Values.postgres.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.postgres.storage.className }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-postgres
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+  selector:
+    {{- include "copperkeep.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+{{- if .Values.postgres.backup.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-backups
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-backup
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with .Values.postgres.backup.storage.className }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.postgres.backup.storage.size }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-backup
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-backup
+spec:
+  schedule: {{ .Values.postgres.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump
+              image: {{ .Values.postgres.image }}
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "copperkeep.secretName" . }}
+                      key: postgres-password
+              command:
+                - /bin/sh
+                - -c
+                # Point the PVC at a NAS mount in production. A backup on the same disk
+                # as the database is not a backup — and the restore is documented in
+                # docs/operations/backup-restore.md, which you should follow once on a
+                # real machine before believing it.
+                - |
+                  set -eu
+                  stamp="$(date +%Y-%m-%d-%H%M)"
+                  pg_dump -h {{ include "copperkeep.fullname" . }}-postgres \
+                    -U {{ .Values.postgres.username }} \
+                    -d {{ .Values.postgres.database }} \
+                    -Fc -f "/backups/copperkeep-${stamp}.dump"
+                  find /backups -name 'copperkeep-*.dump' -mtime +{{ .Values.postgres.backup.retentionDays }} -delete
+                  ls -la /backups
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: {{ include "copperkeep.fullname" . }}-backups
+{{- end }}
+{{- end }}

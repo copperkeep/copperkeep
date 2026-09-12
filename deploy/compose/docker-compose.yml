@@ -1,0 +1,112 @@
+# Copperkeep on one box — a family or a single classroom.
+#
+# The same shape as the Helm chart: one published port, everything path-routed behind
+# it. Do not publish four ports. A second browser-facing origin breaks cross-origin
+# isolation, and with it interrupt().
+#
+# Environment variable names here are identical to the chart's. That, plus the shared
+# /config.json, is what keeps the two deployment paths from drifting.
+
+name: copperkeep
+
+x-image-tag: &tag ${COPPERKEEP_VERSION:-0.1.0}
+
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${COPPERKEEP_HTTP_PORT:-8443}:8080"
+    volumes:
+      - ./proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./config.json:/srv/config.json:ro
+    depends_on: [web, content, runtimes, api]
+
+  web:
+    image: ghcr.io/copperkeep/web:${COPPERKEEP_VERSION:-0.1.0}
+    restart: unless-stopped
+    volumes:
+      # The SPA fetches this at boot. Same keys as the chart's ConfigMap.
+      - ./config.json:/usr/share/nginx/html/config.json:ro
+
+  content:
+    image: ghcr.io/copperkeep/content:${COPPERKEEP_CURRICULUM_VERSION:-2026.09.1}
+    restart: unless-stopped
+
+  audio:
+    image: ghcr.io/copperkeep/audio:${COPPERKEEP_CURRICULUM_VERSION:-2026.09.1}
+    restart: unless-stopped
+
+  runtimes:
+    image: ghcr.io/copperkeep/runtimes:${COPPERKEEP_VERSION:-0.1.0}
+    restart: unless-stopped
+
+  migrate:
+    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.0}
+    command: ["copperkeep-migrate"]
+    restart: "no"
+    environment:
+      COPPERKEEP_DATABASE_URL: postgresql://copperkeep:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/copperkeep
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.0}
+    restart: unless-stopped
+    environment:
+      COPPERKEEP_DATABASE_URL: postgresql://copperkeep:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/copperkeep
+      COPPERKEEP_CONTENT_BASE_URL: http://content:8080
+      COPPERKEEP_SESSION_SECRET: ${COPPERKEEP_SESSION_SECRET:?set COPPERKEEP_SESSION_SECRET}
+      COPPERKEEP_ADMIN_TOKEN: ${COPPERKEEP_ADMIN_TOKEN:?set COPPERKEEP_ADMIN_TOKEN}
+      # localhost is a secure context over plain HTTP; a LAN IP is not. Set this to true
+      # the moment this is reachable as anything but localhost.
+      COPPERKEEP_COOKIE_SECURE: ${COPPERKEEP_COOKIE_SECURE:-false}
+      COPPERKEEP_LOG_LEVEL: ${COPPERKEEP_LOG_LEVEL:-INFO}
+      COPPERKEEP_BOOTSTRAP_ORG_SLUG: ${COPPERKEEP_BOOTSTRAP_ORG_SLUG:-home}
+      COPPERKEEP_BOOTSTRAP_ADMIN_USERNAME: ${COPPERKEEP_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      COPPERKEEP_BOOTSTRAP_ADMIN_PASSWORD: ${COPPERKEEP_BOOTSTRAP_ADMIN_PASSWORD:-}
+      COPPERKEEP_TUTOR_ENABLED: ${COPPERKEEP_TUTOR_ENABLED:-false}
+      COPPERKEEP_TUTOR_BASE_URL: http://tutor:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # Spaced review: resurface each mastered skill at 3, 7 and 21 days. A loop rather than
+  # an in-process timer, for the same reason the chart uses a CronJob.
+  reviews:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    environment:
+      COPPERKEEP_ADMIN_TOKEN: ${COPPERKEEP_ADMIN_TOKEN:?set COPPERKEEP_ADMIN_TOKEN}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          sleep 86400
+          curl -fsS -X POST \
+            -H "X-Copperkeep-Admin-Token: ${COPPERKEEP_ADMIN_TOKEN}" \
+            http://api:8000/v1/admin/reviews/schedule || echo "review scheduling failed"
+        done
+    depends_on: [api]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: copperkeep
+      POSTGRES_USER: copperkeep
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U copperkeep"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

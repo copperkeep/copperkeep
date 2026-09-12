@@ -1,0 +1,182 @@
+# Copperkeep — documented defaults. Everything that can be off, is.
+#
+# These values ARE the application's configuration surface. A new setting on the API is
+# a template change in the same commit, which is what keeps the chart from drifting from
+# the images it deploys.
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: ghcr.io
+  repository: copperkeep
+  # Defaults to .Chart.AppVersion. Pin a digest in production.
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# The single public origin. Everything is path-routed behind it (§3.1).
+ingress:
+  enabled: true
+  className: ""
+  host: copperkeep.local
+  annotations: {}
+  tls:
+    # Required, not optional: SharedArrayBuffer, service workers and
+    # navigator.storage.persist() all need a secure context, and a private IP over HTTP
+    # is not one. Obtain the certificate by DNS-01 so nothing has to be installed on
+    # devices (§9.5).
+    enabled: true
+    secretName: copperkeep-tls
+  # COOP/COEP are set by the web service on the document it serves, which is portable
+  # across ingress controllers. Turn this on only if something in front strips them.
+  crossOriginIsolationHeaders: false
+
+# The SPA's /config.json, rendered into a ConfigMap. Never baked into the bundle.
+config:
+  defaultTheme: auto
+  # Additional keys merged into /config.json verbatim.
+  extra: {}
+
+web:
+  replicas: 1
+  resources:
+    requests: { memory: 32Mi, cpu: 10m }
+    limits: { memory: 128Mi }
+
+content:
+  replicas: 1
+  # The curriculum ships on its own calendar version, independent of the app's semver.
+  tag: "2026.09.1"
+  resources:
+    requests: { memory: 32Mi, cpu: 10m }
+    limits: { memory: 128Mi }
+
+audio:
+  enabled: true
+  replicas: 1
+  tag: "2026.09.1"
+  resources:
+    requests: { memory: 32Mi, cpu: 10m }
+    limits: { memory: 256Mi }
+
+runtimes:
+  replicas: 1
+  resources:
+    requests: { memory: 32Mi, cpu: 10m }
+    limits: { memory: 256Mi }
+
+api:
+  replicas: 1
+  logLevel: INFO
+  # The only thing that scales with load.
+  resources:
+    requests: { memory: 128Mi, cpu: 100m }
+    limits: { memory: 512Mi }
+  # Abuse controls (§7.4). Being on a LAN does not reduce this threat; it is where the
+  # attacker sits.
+  auth:
+    backoffAfter: 3
+    hardLockAfter: 10
+  quotas:
+    eventWritesPerMinute: 240
+    submissionMaxBytes: 64000
+  mastery:
+    threshold: 0.90
+    minOpportunities: 3
+    minStepTypes: 2
+    reviewIntervalsDays: [3, 7, 21]
+  # Generated on first install when left empty, and preserved across upgrades. Provide
+  # existingSecret to manage these yourself.
+  sessionSecret: ""
+  # Used by the review CronJob, which has no session of its own.
+  adminToken: ""
+  existingSecret: ""
+  # Created only when no org exists. Never overwrites an existing account.
+  bootstrap:
+    enabled: true
+    orgSlug: home
+    orgName: Home
+    adminUsername: admin
+    adminPassword: ""
+
+# Spaced review is a CronJob, never an in-process timer — that would fire once per
+# replica (§8).
+reviewScheduler:
+  enabled: true
+  schedule: "0 5 * * *"
+
+# Off by default, and not deployed at all when disabled rather than deployed and idle.
+tutor:
+  enabled: false
+  replicas: 1
+  baseUrl: http://ollama:11434/v1
+  model: qwen2.5-coder:7b
+  apiKeySecret: ""
+  timeoutSeconds: 8
+  latencyGate:
+    # An 8s budget and a 7B model on N100 CPU are mutually exclusive. The service
+    # measures p95 at startup and refuses to enable guidance if it exceeds the budget.
+    enabled: true
+    probeOnStart: true
+  features:
+    guidance: false
+    reporting: false
+  resources:
+    requests: { memory: 128Mi, cpu: 100m }
+    limits: { memory: 512Mi }
+
+postgres:
+  # embedded | operator | external
+  #
+  # embedded is correct for a family or a single classroom: a StatefulSet, a PVC, a
+  # Service and a pg_dump CronJob. An operator to manage one database on one node is
+  # upside down, and you will actually understand the restore path.
+  mode: embedded
+
+  # mode: embedded
+  image: postgres:16-alpine
+  database: copperkeep
+  username: copperkeep
+  password: ""
+  existingSecret: ""
+  storage:
+    size: 8Gi
+    className: ""
+  resources:
+    requests: { memory: 256Mi, cpu: 250m }
+    limits: { memory: 1Gi }
+  backup:
+    # On-premise means nobody else is doing this. Test the restore before believing it.
+    enabled: true
+    schedule: "0 2 * * *"
+    retentionDays: 14
+    storage:
+      size: 8Gi
+      className: ""
+
+  # mode: external — a full DSN, or point at a secret holding one.
+  externalUrl: ""
+  externalUrlSecret: ""
+  externalUrlSecretKey: url
+
+# Expose /metrics and structured logs unconditionally; ship no stack.
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  labels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

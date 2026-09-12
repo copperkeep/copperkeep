@@ -1,0 +1,22 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{/* For sites that already run a stack. /metrics and structured logs are exposed
+     unconditionally; no observability stack ships with this chart. */}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "copperkeep.fullname" . }}
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "copperkeep.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.serviceMonitor.interval }}
+{{- end }}

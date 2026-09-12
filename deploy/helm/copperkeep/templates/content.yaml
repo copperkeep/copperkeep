@@ -1,0 +1,3 @@
+{{/* Versioned and rolled back independently of everything else — the curriculum ships
+     on its own calendar version. */}}
+{{- include "copperkeep.staticService" (dict "root" . "name" "content" "cfg" .Values.content) }}

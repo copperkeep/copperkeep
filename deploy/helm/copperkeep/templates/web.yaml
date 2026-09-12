@@ -1,0 +1,1 @@
+{{- include "copperkeep.staticService" (dict "root" . "name" "web" "cfg" .Values.web) }}

@@ -1,0 +1,77 @@
+{{- if .Values.tutor.enabled }}
+{{/* Absent from the deployment when disabled, rather than deployed and idle. Never
+     reachable from the browser: the API is the only front door. */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-tutor
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tutor
+spec:
+  replicas: {{ .Values.tutor.replicas }}
+  selector:
+    matchLabels:
+      {{- include "copperkeep.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: tutor
+  template:
+    metadata:
+      labels:
+        {{- include "copperkeep.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tutor
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: tutor
+          image: {{ include "copperkeep.image" (dict "root" . "name" "tutor" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: COPPERKEEP_TUTOR_BASE_URL
+              value: {{ .Values.tutor.baseUrl | quote }}
+            - name: COPPERKEEP_TUTOR_MODEL
+              value: {{ .Values.tutor.model | quote }}
+            - name: COPPERKEEP_TUTOR_TIMEOUT_SECONDS
+              value: {{ .Values.tutor.timeoutSeconds | quote }}
+            - name: COPPERKEEP_TUTOR_LATENCY_GATE_ENABLED
+              value: {{ .Values.tutor.latencyGate.enabled | quote }}
+            - name: COPPERKEEP_TUTOR_PROBE_ON_START
+              value: {{ .Values.tutor.latencyGate.probeOnStart | quote }}
+            - name: COPPERKEEP_TUTOR_LATENCY_BUDGET_SECONDS
+              value: {{ .Values.tutor.timeoutSeconds | quote }}
+            {{- if .Values.tutor.apiKeySecret }}
+            - name: COPPERKEEP_TUTOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tutor.apiKeySecret }}
+                  key: api-key
+            {{- end }}
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources: {{- toYaml .Values.tutor.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "copperkeep.fullname" . }}-tutor
+  labels:
+    {{- include "copperkeep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tutor
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+  selector:
+    {{- include "copperkeep.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: tutor
+{{- end }}

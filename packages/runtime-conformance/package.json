@@ -1,0 +1,22 @@
+{
+  "name": "@copperkeep/runtime-conformance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo 'runs in a browser against a live runtime — see /conformance'"
+  },
+  "dependencies": {
+    "@copperkeep/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

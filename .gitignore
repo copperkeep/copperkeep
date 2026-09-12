@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+.env
+.env.local
+deploy/compose/.env
+
+# vendored at build time, never committed
+images/runtimes/vendor/
+
+.DS_Store

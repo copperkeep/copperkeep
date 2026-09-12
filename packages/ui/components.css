@@ -1,0 +1,476 @@
+/* Copperkeep components — plan §13.5.
+ *
+ * Every rule here references tokens only. Colour is never the only carrier: each state
+ * below also has a shape or a word.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--ink-900);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+body {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-alt);
+  outline-offset: 2px;
+}
+
+/* Motion only answers an action. There are two, and this disables both. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Mono is for labels, never for prose. One deliberate departure by tier: uppercase
+ * tracked text is measurably slower for early readers. */
+.label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+[data-tier="grade3"] .label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+}
+
+/* The primitive every interactive element composes. */
+.tap {
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--raise);
+}
+
+.tap:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tap--primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+.tap--quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--fg-muted);
+}
+
+/* ---------- type ---------- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin: 6px 0 10px;
+}
+
+/* Headlines are claims in sentence case: "Loops repeat things", never "Loops". */
+.display .hl {
+  color: var(--accent);
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--fg-muted);
+  margin: 0 0 14px;
+  max-width: var(--measure);
+}
+
+p {
+  color: var(--fg-muted);
+  max-width: var(--measure);
+  margin: 0 0 10px;
+}
+
+/* Young readers lose a long line; the floor is 18px on tablet. */
+[data-tier="grade3"] p,
+[data-tier="grade3"] .lede {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  background: var(--accent-alt);
+  display: inline-block;
+}
+
+.note {
+  font-size: 13px;
+  color: var(--fg-dim);
+  margin-top: 14px;
+}
+
+/* ---------- surfaces ---------- */
+
+.panel {
+  background: var(--ink-800);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.card {
+  background: var(--ink-700);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--raise);
+}
+
+.callout {
+  border-left: 3px solid var(--accent-alt);
+  padding: 12px 14px;
+  background: var(--ink-700);
+  border-radius: var(--radius);
+}
+
+/* ---------- the terminal: editor and output, dark in both themes ---------- */
+
+.code,
+.out {
+  background: var(--code-ground);
+  color: var(--code-fg);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+}
+
+.code {
+  border-left: 3px solid var(--accent-alt);
+  padding: 12px 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  overflow: auto;
+  margin: 0;
+}
+
+.code__title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--code-dim);
+  margin-bottom: 6px;
+}
+
+[data-tier="grade3"] .code__title {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+.out {
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: 13px;
+  border: 1px solid var(--code-line);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Syntax highlighting borrows the categorical series, never the four semantic accents:
+ * a green string literal must not read as "correct". */
+.tok-k { color: var(--code-k); }
+.tok-s { color: var(--code-s); }
+.tok-n { color: var(--code-n); }
+.tok-f { color: var(--code-f); }
+.tok-c { color: var(--code-c); }
+
+.test-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--code-line);
+}
+
+.test-row:first-child {
+  border-top: 0;
+}
+
+.test-row .name {
+  flex: 1;
+  color: var(--code-dim);
+}
+
+/* Inside the terminal, the terminal's own accents — the panel is dark in both themes,
+ * so the light-mode luminance drop would fail here. */
+.test-row .pass { color: #00e06a; }
+.test-row .fail { color: #f0466e; }
+
+/* ---------- hints ---------- */
+
+.hint {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--ink-700);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-warn);
+  box-shadow: var(--raise);
+}
+
+/* Parents and instructors should be able to tell at a glance which guidance was
+ * written and which was generated. */
+.hint--ai {
+  border-left-color: var(--accent-alt);
+  background: color-mix(in srgb, var(--accent-alt) 8%, var(--ink-700));
+}
+
+.hint .label {
+  margin-bottom: 4px;
+  display: block;
+}
+
+.hint p {
+  margin: 0;
+}
+
+/* ---------- skill map: five states, colour never alone ---------- */
+
+.skill-map {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.skill-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 118px;
+}
+
+.skill-node .dot {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.skill-node .t {
+  font-size: 13px;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.skill-node--mastered .dot {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.skill-node--progress .dot {
+  border: 2px solid var(--accent-alt);
+  color: var(--accent-alt);
+}
+
+.skill-node--review .dot {
+  border: 2px dashed var(--accent-warn);
+  color: var(--accent-warn);
+}
+
+.skill-node--failed .dot {
+  border: 2px solid var(--accent-hot);
+  color: var(--accent-hot);
+}
+
+.skill-node--locked .dot {
+  border: 2px dotted var(--line-strong);
+  color: var(--fg-dim);
+}
+
+/* ---------- parsons ---------- */
+
+.parsons-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--tap-min);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: var(--code-ground);
+  color: var(--code-fg);
+  border: 1px solid var(--code-line);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  cursor: grab;
+}
+
+.parsons-line::before {
+  content: "⠿";
+  color: var(--code-dim);
+  font-size: 18px;
+}
+
+.parsons-line[aria-grabbed="true"] {
+  border-color: var(--accent-alt);
+}
+
+/* ---------- transcript (a repl step type, if one is ever built) ---------- */
+
+.transcript {
+  background: var(--code-ground);
+  color: var(--code-fg);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.transcript .prompt::before {
+  content: ">>> ";
+  color: var(--code-dim);
+}
+
+/* ---------- progress, chips, report furniture ---------- */
+
+.progress {
+  display: flex;
+  gap: 4px;
+}
+
+.progress span {
+  height: 4px;
+  flex: 1;
+  background: var(--line);
+  border-radius: 2px;
+}
+
+.progress span[data-done="true"] {
+  background: var(--accent);
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chips span {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--fg-muted);
+}
+
+.stat-strip {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.bignum {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 34px;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.chart-well {
+  background: var(--ink-800);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.chart-well svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+}
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table.data th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  text-align: left;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+table.data td {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--fg-muted);
+}

@@ -1,0 +1,4 @@
+{{/* Split from content because narration is 50-200MB against ~2MB of JSON. */}}
+{{- if .Values.audio.enabled }}
+{{- include "copperkeep.staticService" (dict "root" . "name" "audio" "cfg" .Values.audio) }}
+{{- end }}
