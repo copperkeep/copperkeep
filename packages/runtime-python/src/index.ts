@@ -126,8 +126,15 @@ export class PythonRuntime implements LanguageRuntime {
     const handle = this.#handle;
 
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let interruptedByTimeout = false;
+
     const timeout = new Promise<"timeout">((resolve) => {
       timer = setTimeout(() => {
+        // Already answered: there is nothing to interrupt, and a run that finished just
+        // under the wire must not be reported as a timeout.
+        if (handle.pending.size === 0) return;
+
+        interruptedByTimeout = true;
         this.interrupt();
         // Give the interrupt a moment to land before the blunt instrument.
         setTimeout(() => {
@@ -138,7 +145,14 @@ export class PythonRuntime implements LanguageRuntime {
     });
 
     try {
-      return (await Promise.race([handle.send(type, payload) as Promise<T>, timeout])) as T;
+      const result = await Promise.race([handle.send(type, payload) as Promise<T>, timeout]);
+      // The wall clock is the host's to enforce, so if we stopped the program it timed
+      // out — whichever promise happened to settle first. Without this the interrupt
+      // lands, Python raises KeyboardInterrupt, and the worker's own reply wins the race
+      // and reports a runtime error. That difference is not cosmetic: a timeout feeds
+      // the mastery estimate nothing, while a runtime error feeds it at reduced weight,
+      // so every accidental infinite loop would count against the learner.
+      return interruptedByTimeout ? ("timeout" as unknown as T) : (result as T);
     } finally {
       clearTimeout(timer);
     }
