@@ -5,7 +5,7 @@
   "runtimesBaseUrl": "/runtimes",
   "pyodideIndexUrl": "/runtimes/pyodide/v0.26.4/",
   "micropipIndexUrl": "/runtimes/wheels/",
-  "appVersion": "0.1.0",
+  "appVersion": "0.1.1",
   "defaultTheme": "auto",
   "tutorEnabled": false
 }

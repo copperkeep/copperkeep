@@ -1,6 +1,6 @@
 # Upgrade
 
-Two things version independently: the **application** (semver, `0.1.0`) and the
+Two things version independently: the **application** (semver, `0.1.1`) and the
 **curriculum** (calendar version, `2026.09.1`).
 
 ## Application
