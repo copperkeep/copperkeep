@@ -37,6 +37,7 @@ export function LessonView({
   const [aiHint, setAiHint] = useState<Hint | null>(null);
   const [choice, setChoice] = useState<string | null>(null);
   const [order, setOrder] = useState<string[]>([]);
+  const [answeredCorrectly, setAnsweredCorrectly] = useState(false);
   const startedAt = useRef(Date.now());
 
   const tier = identity.reading_tier;
@@ -61,6 +62,7 @@ export function LessonView({
     setSemanticFailures(0);
     setAiHint(null);
     setChoice(null);
+    setAnsweredCorrectly(false);
     setOrder(shuffle([...(step.lines ?? []), ...(step.distractors ?? [])]));
     startedAt.current = Date.now();
     queue.push({ event_type: "step_started", course_id: courseId, step_id: step.id });
@@ -82,6 +84,7 @@ export function LessonView({
     try {
       const result = await runtime.evaluate(code, step.tests);
       setEvaluation(result);
+      setAnsweredCorrectly(result.passed);
       await record(result, code);
     } finally {
       setBusy(false);
@@ -141,18 +144,31 @@ export function LessonView({
     }
   }
 
-  function submitChoice(option: string) {
-    setChoice(option);
-    const correct = option === step.answer;
+  function recordChoice(correct: boolean) {
+    setAnsweredCorrectly(correct);
     queue.push({
       event_type: "attempt",
       course_id: courseId,
       step_id: step.id,
       correct,
+      // There is no interpreter involved, so a wrong pick is a wrong answer, full stop.
       failure_kind: correct ? undefined : "semantic",
       payload: { msOnStep: Date.now() - startedAt.current },
     });
     if (!correct) setSemanticFailures((count) => count + 1);
+  }
+
+  function submitChoice(option: string) {
+    setChoice(option);
+    recordChoice(option === step.answer);
+  }
+
+  function submitParsons() {
+    const expected = step.lines ?? [];
+    // The distractors have to end up below the answer, not merely somewhere else.
+    const correct = expected.every((line, i) => order[i] === line);
+    setChoice(correct ? "correct" : "incorrect");
+    recordChoice(correct);
   }
 
   const isLast = stepIndex === lesson.steps.length - 1;
@@ -252,6 +268,13 @@ export function LessonView({
                 </button>
               </div>
             ))}
+            {choice !== null && (
+              <p className="note">
+                {choice === "correct"
+                  ? "That's it."
+                  : "Not yet — one of those lines does not belong in the loop."}
+              </p>
+            )}
           </>
         ) : (
           <p className="note">Read this one, then continue.</p>
@@ -268,11 +291,16 @@ export function LessonView({
               </button>
             </>
           )}
+          {step.type === "parsons" && (
+            <button className="tap tap--primary" onClick={submitParsons}>
+              Check my answer
+            </button>
+          )}
           {/* Always visible, never behind a menu. */}
           <button className="tap" onClick={handleStuck}>
             I&apos;m stuck
           </button>
-          {(evaluation?.passed || step.type === "narrative" || choice === step.answer) && (
+          {(answeredCorrectly || step.type === "narrative") && (
             <button
               className="tap tap--primary"
               onClick={() => setStepIndex((i) => Math.min(i + 1, lesson.steps.length - 1))}
