@@ -83,5 +83,17 @@ everything else stays together so a contract change is one atomic commit.
 
 ## Licence
 
-Open — see [`docs/adr/0009-licence.md`](docs/adr/0009-licence.md). Do not add a
-`LICENSE` file until that ADR is accepted.
+**AGPL-3.0-only**, with two deliberate exceptions:
+
+- [`packages/contracts`](packages/contracts) is **Apache-2.0** — it is the interface and
+  schema a third party implements to add a language, and copyleft there would discourage
+  that.
+- The [curriculum](https://github.com/copperkeep/curriculum) is **CC BY-SA 4.0**. Lessons
+  are not software.
+
+Contributions require agreeing to [`CLA.md`](CLA.md). That keeps the copyright
+consolidated, which is what allows dual-licensing for organisations whose procurement
+rules reject AGPL. The reasoning, including a reversal, is in
+[`docs/adr/0009-licence.md`](docs/adr/0009-licence.md).
+
+Copyright (C) 2026 Jeffrey Chin.

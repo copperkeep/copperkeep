@@ -1,6 +1,7 @@
 {
   "name": "@copperkeep/web",
   "version": "0.1.1",
+  "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'the runtime suite runs in a browser — see /conformance'"
+    "test": "echo 'the runtime suite runs in a browser \u2014 see /conformance'"
   },
   "dependencies": {
     "@codemirror/commands": "^6.7.1",

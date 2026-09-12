@@ -2,6 +2,7 @@
   "name": "copperkeep",
   "private": true,
   "version": "0.1.1",
+  "license": "AGPL-3.0-only",
   "packageManager": "pnpm@9.12.3",
   "engines": {
     "node": ">=22"

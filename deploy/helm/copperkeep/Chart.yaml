@@ -17,4 +17,4 @@ keywords:
   - python
   - self-hosted
 annotations:
-  artifacthub.io/license: "See docs/adr/0009-licence.md"
+  artifacthub.io/license: AGPL-3.0-only

@@ -22,5 +22,5 @@ Not every commit; roughly the granularity of the decisions table in
 | [0006](0006-append-only-events.md) | Progress is an append-only event log | Accepted |
 | [0007](0007-content-as-files.md) | Content is read-only files, never database rows | Accepted |
 | [0008](0008-chart-in-repo.md) | One chart, in this repo, versioned with the app | Accepted |
-| [0009](0009-licence.md) | Open-source licence | **Open** |
+| [0009](0009-licence.md) | AGPL-3.0, with carve-outs and a CLA | Accepted, reverses its own premise |
 | [0010](0010-pwa-is-load-bearing.md) | PWA install is load-bearing, not cosmetic | Accepted, reverses an earlier rationale |

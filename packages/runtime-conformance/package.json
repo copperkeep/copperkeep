@@ -1,6 +1,7 @@
 {
   "name": "@copperkeep/runtime-conformance",
   "version": "0.1.1",
+  "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -11,7 +12,7 @@
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo 'runs in a browser against a live runtime — see /conformance'"
+    "test": "echo 'runs in a browser against a live runtime \u2014 see /conformance'"
   },
   "dependencies": {
     "@copperkeep/contracts": "workspace:*"
