@@ -11,6 +11,11 @@ import io, json, sys, traceback
 def _classify(exc):
     if isinstance(exc, (SyntaxError, IndentationError)):
         return "parse"
+    # An interrupt means the program did not finish on its own. Calling that a runtime
+    # error would feed it into the mastery estimate, which is exactly what a timeout is
+    # defined not to do.
+    if isinstance(exc, KeyboardInterrupt):
+        return "timeout"
     return "runtime"
 
 def _friendly(exc):
@@ -25,6 +30,8 @@ def _friendly(exc):
         return "%s" % detail
     if isinstance(exc, ZeroDivisionError):
         return "Something was divided by zero."
+    if isinstance(exc, KeyboardInterrupt):
+        return "Your program never finished."
     return "%s: %s" % (name, detail) if detail else name
 
 def _exec(code, stdin_text):
