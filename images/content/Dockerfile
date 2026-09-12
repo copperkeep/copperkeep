@@ -11,13 +11,16 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 COPY images/content/nginx.conf /etc/nginx/conf.d/default.conf
 
+# Files live at the path the browser asks for. The service is mounted at /content/ on
+# the shared origin, so /content/manifest.json is served from content/manifest.json here
+# — no proxy anywhere has to rewrite the path, and the chart's own Ingress works.
 USER root
-RUN mkdir -p /usr/share/nginx/html && \
+RUN mkdir -p /usr/share/nginx/html/content && \
     printf '{"contentVersion":"0.0.0","minAppVersion":"0.0.0","courses":[]}' \
-      > /usr/share/nginx/html/manifest.json && \
+      > /usr/share/nginx/html/content/manifest.json && \
     printf '{"ontologyVersion":0,"skills":[],"transitions":[]}' \
-      > /usr/share/nginx/html/skills.json && \
-    printf '{"steps":{}}' > /usr/share/nginx/html/steps.json
+      > /usr/share/nginx/html/content/skills.json && \
+    printf '{"steps":{}}' > /usr/share/nginx/html/content/steps.json
 USER 101
 
 EXPOSE 8080

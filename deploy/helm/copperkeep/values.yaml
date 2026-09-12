@@ -47,7 +47,7 @@ web:
 content:
   replicas: 1
   # The curriculum ships on its own calendar version, independent of the app's semver.
-  tag: "2026.09.1"
+  tag: "2026.09.2"
   resources:
     requests: { memory: 32Mi, cpu: 10m }
     limits: { memory: 128Mi }
@@ -55,7 +55,7 @@ content:
 audio:
   enabled: true
   replicas: 1
-  tag: "2026.09.1"
+  tag: "2026.09.2"
   resources:
     requests: { memory: 32Mi, cpu: 10m }
     limits: { memory: 256Mi }

@@ -9,7 +9,7 @@
 
 name: copperkeep
 
-x-image-tag: &tag ${COPPERKEEP_VERSION:-0.1.2}
+x-image-tag: &tag ${COPPERKEEP_VERSION:-0.1.3}
 
 services:
   proxy:
@@ -23,26 +23,26 @@ services:
     depends_on: [web, content, runtimes, api]
 
   web:
-    image: ghcr.io/copperkeep/web:${COPPERKEEP_VERSION:-0.1.2}
+    image: ghcr.io/copperkeep/web:${COPPERKEEP_VERSION:-0.1.3}
     restart: unless-stopped
     volumes:
       # The SPA fetches this at boot. Same keys as the chart's ConfigMap.
       - ./config.json:/usr/share/nginx/html/config.json:ro
 
   content:
-    image: ghcr.io/copperkeep/content:${COPPERKEEP_CURRICULUM_VERSION:-2026.09.1}
+    image: ghcr.io/copperkeep/content:${COPPERKEEP_CURRICULUM_VERSION:-2026.09.2}
     restart: unless-stopped
 
   audio:
-    image: ghcr.io/copperkeep/audio:${COPPERKEEP_CURRICULUM_VERSION:-2026.09.1}
+    image: ghcr.io/copperkeep/audio:${COPPERKEEP_CURRICULUM_VERSION:-2026.09.2}
     restart: unless-stopped
 
   runtimes:
-    image: ghcr.io/copperkeep/runtimes:${COPPERKEEP_VERSION:-0.1.2}
+    image: ghcr.io/copperkeep/runtimes:${COPPERKEEP_VERSION:-0.1.3}
     restart: unless-stopped
 
   migrate:
-    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.2}
+    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.3}
     command: ["copperkeep-migrate"]
     restart: "no"
     environment:
@@ -52,11 +52,11 @@ services:
         condition: service_healthy
 
   api:
-    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.2}
+    image: ghcr.io/copperkeep/api:${COPPERKEEP_VERSION:-0.1.3}
     restart: unless-stopped
     environment:
       COPPERKEEP_DATABASE_URL: postgresql://copperkeep:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/copperkeep
-      COPPERKEEP_CONTENT_BASE_URL: http://content:8080
+      COPPERKEEP_CONTENT_BASE_URL: http://content:8080/content
       COPPERKEEP_SESSION_SECRET: ${COPPERKEEP_SESSION_SECRET:?set COPPERKEEP_SESSION_SECRET}
       COPPERKEEP_ADMIN_TOKEN: ${COPPERKEEP_ADMIN_TOKEN:?set COPPERKEEP_ADMIN_TOKEN}
       # localhost is a secure context over plain HTTP; a LAN IP is not. Set this to true

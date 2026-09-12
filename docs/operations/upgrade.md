@@ -1,6 +1,6 @@
 # Upgrade
 
-Two things version independently: the **application** (semver, `0.1.2`) and the
+Two things version independently: the **application** (semver, `0.1.3`) and the
 **curriculum** (calendar version, `2026.09.1`).
 
 ## Application
@@ -23,6 +23,20 @@ docker compose pull && docker compose up -d
 ```
 
 **Do not use Watchtower.** An auto-update landing mid-lesson is a bad experience.
+
+## Upgrading to 0.1.3
+
+**0.1.3 requires curriculum 2026.09.2 or newer.** Upgrade both together.
+
+Before 0.1.3 the static services served their files from their own root while the browser
+asked for them under a prefix, so anything in front had to strip it — and the chart's own
+Ingress did not, which meant `/content` and `/runtimes` returned 404. Each image now
+serves its files at the public path, so nothing rewrites anything.
+
+If you front this with your own proxy, **remove any prefix stripping** when you upgrade:
+a trailing slash on an nginx `proxy_pass`, a Traefik `stripPrefix` middleware, or an
+ingress-nginx `rewrite-target`. The API will fail its readiness probe with
+`contentLoaded: false` if the content service is still on 2026.09.1.
 
 ## Curriculum
 

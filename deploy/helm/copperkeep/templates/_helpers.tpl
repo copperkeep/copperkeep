@@ -78,8 +78,10 @@ nothing else, so the mode is purely a chart concern (§9.3).
   value: {{ .Chart.AppVersion | quote }}
 - name: COPPERKEEP_LOG_LEVEL
   value: {{ .Values.api.logLevel | quote }}
+{{- /* /content is part of the path inside the image too, so the API asks for exactly
+       what a browser asks for. */}}
 - name: COPPERKEEP_CONTENT_BASE_URL
-  value: http://{{ include "copperkeep.fullname" . }}-content:8080
+  value: http://{{ include "copperkeep.fullname" . }}-content:8080/content
 - name: COPPERKEEP_SESSION_SECRET
   valueFrom:
     secretKeyRef:
