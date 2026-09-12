@@ -73,6 +73,16 @@ export function LessonView({
     setBusy(true);
     try {
       setRun(await runtime.run(code));
+    } catch (error) {
+      // A button that does nothing is the worst possible failure: the learner has no
+      // idea whether they are wrong or the app is broken. Say so in the output pane.
+      setRun({
+        stdout: "",
+        stderr: `Python could not run: ${String(error)}`,
+        exitCode: 1,
+        durationMs: 0,
+        timedOut: false,
+      });
     } finally {
       setBusy(false);
     }
@@ -86,6 +96,14 @@ export function LessonView({
       setEvaluation(result);
       setAnsweredCorrectly(result.passed);
       await record(result, code);
+    } catch (error) {
+      setRun({
+        stdout: "",
+        stderr: `Could not check your answer: ${String(error)}`,
+        exitCode: 1,
+        durationMs: 0,
+        timedOut: false,
+      });
     } finally {
       setBusy(false);
     }
