@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="COPPERKEEP_", env_file=".env", extra="ignore")
 
-    app_version: str = "0.1.6"
+    app_version: str = "0.1.7"
     log_level: str = "INFO"
 
     database_url: str = "postgresql://copperkeep:copperkeep@localhost:5432/copperkeep"

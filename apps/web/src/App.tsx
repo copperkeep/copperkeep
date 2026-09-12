@@ -112,8 +112,6 @@ export function App() {
     };
   }, [learnerId]);
 
-  if (!identity) return <Login onSignedIn={setIdentity} />;
-
   // Every lesson in the course, in order. Previously this rendered modules[0].lessons[0]
   // and nothing else, so most of the curriculum was unreachable.
   const lessons = useMemo(
@@ -135,6 +133,12 @@ export function App() {
       lesson.steps.every((step) => step.prerequisites.every((skill) => mastered.has(skill))),
     [mastered],
   );
+
+  // Every hook above this line, without exception. Returning early before a hook
+  // means the signed-out render calls fewer than the signed-in one, and React tears
+  // the whole tree down with "rendered more hooks than during the previous render" —
+  // which shows up as a blank white page immediately after signing in.
+  if (!identity) return <Login onSignedIn={setIdentity} />;
 
   const current = lessons[lessonIndex] ?? lessons[0] ?? null;
   const lesson = current?.lesson ?? null;
