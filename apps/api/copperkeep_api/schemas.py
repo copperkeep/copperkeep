@@ -137,5 +137,14 @@ class ReportResponse(BaseModel):
 class CreateLearner(BaseModel):
     username: str = Field(max_length=64)
     display_name: str = Field(max_length=64)
-    pin: str = Field(min_length=4, max_length=8)
+    # A 4-digit keyspace is 10,000, which is why §7.4 throttling is not optional.
+    pin: str = Field(min_length=4, max_length=8, pattern=r"^\d+$")
     reading_tier: ReadingTier = "grade3"
+
+
+class ResetPin(BaseModel):
+    pin: str = Field(min_length=4, max_length=8, pattern=r"^\d+$")
+
+
+class CreateCohort(BaseModel):
+    name: str = Field(min_length=1, max_length=120)

@@ -13,7 +13,7 @@ from .. import db
 from ..config import settings
 from ..content import index
 from ..deps import Principal, guardianship_or_self, optional_principal, require_adult
-from ..schemas import CreateLearner, EventIn
+from ..schemas import CreateCohort, CreateLearner, EventIn, ResetPin
 from ..security import hash_secret
 from .learn import apply_review, apply_to_skills
 
@@ -63,23 +63,27 @@ async def unlock(learner_id: UUID, principal: Principal = Depends(require_adult)
 
 @router.post("/learners/{learner_id}/pin", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_pin(
-    learner_id: UUID, pin: str, principal: Principal = Depends(require_adult)
+    learner_id: UUID, body: ResetPin, principal: Principal = Depends(require_adult)
 ) -> None:
+    """The adult's unconditional reset capability.
+
+    A body, not a query parameter — a PIN in a URL ends up in every access log and proxy
+    trace between here and the browser.
+    """
     await guardianship_or_self(principal, learner_id)
-    if not (4 <= len(pin) <= 8) or not pin.isdigit():
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "pin must be 4-8 digits")
     await db.pool().execute(
         "UPDATE users SET pin_hash = $3 WHERE org_id = $1 AND id = $2",
         principal.org_id,
         learner_id,
-        hash_secret(pin),
+        hash_secret(body.pin),
     )
 
 
 @router.post("/cohorts", status_code=status.HTTP_201_CREATED)
 async def create_cohort(
-    name: str, principal: Principal = Depends(require_adult)
+    body: CreateCohort, principal: Principal = Depends(require_adult)
 ) -> dict[str, str]:
+    name = body.name
     join_code = secrets.token_hex(3).upper()
     cohort_id = await db.pool().fetchval(
         """
