@@ -124,6 +124,8 @@ jobs:
           docker build -t copperkeep/api:ci -f apps/api/Dockerfile apps/api
           docker build -t copperkeep/web:ci -f apps/web/Dockerfile .
           docker build -t copperkeep/content-base:ci -f images/content/Dockerfile .
+          # Real Pyodide, because the browser tests run actual Python.
+          docker build -t copperkeep/runtimes:ci -f images/runtimes/Dockerfile .
       # Browsers for the suite that drives the actual UI. Every user-visible bug this
       # project has shipped lived in that layer and was invisible to the API assertions.
       - uses: pnpm/action-setup@v4

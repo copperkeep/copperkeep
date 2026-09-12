@@ -17,9 +17,13 @@ COPPERKEEP_HTTP_PORT=8443
 COPPERKEEP_COOKIE_SECURE=false
 EOF
 
-# The images this commit would ship, plus stand-ins for the two the curriculum repo
-# builds. content-base carries an empty-but-valid manifest, which is enough to exercise
-# the API's content dependency and its event validation.
+# The images this commit would ship, plus a stand-in for audio (the curriculum repo
+# builds it, and nothing here plays a sound). content-base carries an empty-but-valid
+# manifest, which is enough to exercise the API's content dependency and its event
+# validation.
+#
+# runtimes is NOT stubbed: the browser tests need real Pyodide, and substituting a bare
+# nginx there is exactly the kind of stand-in that let five bugs through.
 cat > docker-compose.override.yml <<'EOF'
 services:
   api:
@@ -33,7 +37,7 @@ services:
   audio:
     image: nginx:1.27-alpine
   runtimes:
-    image: nginx:1.27-alpine
+    image: copperkeep/runtimes:ci
 EOF
 
 cleanup() {

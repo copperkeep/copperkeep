@@ -10,7 +10,14 @@ export async function signIn(page: Page): Promise<void> {
   await page.goto("/");
 
   const username = page.locator("#username");
-  if (await username.isVisible().catch(() => false)) {
+  const shell = page.getByRole("heading", { name: "Copperkeep", level: 1 });
+
+  // isVisible() answers immediately rather than waiting, so checking it straight after a
+  // goto just asks whether React has rendered yet — which it has not. Wait for whichever
+  // entry state the app lands in: the sign-in form, or the shell if the cookie is live.
+  await expect(username.or(shell).first()).toBeVisible();
+
+  if (await username.isVisible()) {
     await page.locator("#org").fill(ORG);
     await username.fill(USERNAME);
     // The form defaults to a PIN, which is the right default for a child.
@@ -21,7 +28,7 @@ export async function signIn(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Go" }).click();
   }
 
-  await expect(page.getByRole("heading", { name: "Copperkeep", level: 1 })).toBeVisible();
+  await expect(shell).toBeVisible();
 }
 
 /** Replaces the editor's contents. CodeMirror needs real keystrokes, not a fill(). */
