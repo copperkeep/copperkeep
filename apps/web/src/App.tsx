@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { Course, Identity, LanguageRuntime, SkillState } from "@copperkeep/contracts";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Course, Identity, LanguageRuntime, Lesson, SkillState } from "@copperkeep/contracts";
 import { createPythonRuntime } from "@copperkeep/runtime-python";
 import { api, EventQueue } from "./api";
 import { config } from "./config";
@@ -22,6 +22,7 @@ export function App() {
   const [theme, setTheme] = useState<Theme>("auto");
   const [dyslexia, setDyslexia] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
+  const [lessonIndex, setLessonIndex] = useState(0);
 
   const mergeSkills = useCallback((updated: SkillState[]) => {
     setSkills((current) => {
@@ -113,7 +114,31 @@ export function App() {
 
   if (!identity) return <Login onSignedIn={setIdentity} />;
 
-  const lesson = course?.modules[0]?.lessons[0] ?? null;
+  // Every lesson in the course, in order. Previously this rendered modules[0].lessons[0]
+  // and nothing else, so most of the curriculum was unreachable.
+  const lessons = useMemo(
+    () =>
+      course?.modules.flatMap((module) =>
+        module.lessons.map((lesson) => ({ lesson, moduleTitle: module.title })),
+      ) ?? [],
+    [course],
+  );
+  const mastered = useMemo(
+    () => new Set(skills.filter((skill) => skill.mastered).map((skill) => skill.skill_id)),
+    [skills],
+  );
+  // A lesson opens when the learner holds the skills its steps require — not when they
+  // finished the previous one. The server enforces this per step; showing it here is what
+  // makes "you need this before that" visible rather than mysterious.
+  const isOpen = useCallback(
+    (lesson: Lesson) =>
+      lesson.steps.every((step) => step.prerequisites.every((skill) => mastered.has(skill))),
+    [mastered],
+  );
+
+  const current = lessons[lessonIndex] ?? lessons[0] ?? null;
+  const lesson = current?.lesson ?? null;
+  const nextOpen = lessons.findIndex((entry, i) => i > lessonIndex && isOpen(entry.lesson));
 
   return (
     <div className="shell">
@@ -185,13 +210,45 @@ export function App() {
       {view === "map" && <SkillMap skills={skills} />}
       {view === "lesson" &&
         (lesson && course ? (
-          <LessonView
-            lesson={lesson}
-            courseId={course.id}
-            identity={identity}
-            runtime={runtime}
-            queue={queue.current!}
-          />
+          <>
+            {lessons.length > 1 && (
+              <nav className="chips" style={{ marginBottom: 16 }} aria-label="Lessons">
+                {lessons.map((entry, i) => {
+                  const open = isOpen(entry.lesson);
+                  return (
+                    <button
+                      key={entry.lesson.id}
+                      className="tap tap--quiet"
+                      aria-pressed={i === lessonIndex}
+                      aria-disabled={!open}
+                      title={open ? entry.moduleTitle : "Finish the earlier lessons first"}
+                      onClick={() => open && setLessonIndex(i)}
+                      style={{
+                        opacity: open ? 1 : 0.45,
+                        borderColor: i === lessonIndex ? "var(--accent-alt)" : undefined,
+                      }}
+                    >
+                      {open ? entry.lesson.title : `${entry.lesson.title} (locked)`}
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
+            <LessonView
+              key={lesson.id}
+              lesson={lesson}
+              courseId={course.id}
+              identity={identity}
+              runtime={runtime}
+              queue={queue.current!}
+              nextLessonTitle={nextOpen === -1 ? null : lessons[nextOpen]!.lesson.title}
+              onNextLesson={() => nextOpen !== -1 && setLessonIndex(nextOpen)}
+              onSeeSkills={() => {
+                globalThis.location.hash = "map";
+                setView("map");
+              }}
+            />
+          </>
         ) : (
           <section className="card">
             <p>No lessons loaded yet.</p>

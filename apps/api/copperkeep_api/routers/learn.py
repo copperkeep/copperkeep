@@ -89,6 +89,12 @@ def _validate(event: EventIn, step: StepDef | None, held: set[str]) -> str | Non
 async def apply_to_skills(
     conn, org_id, user_id, event: EventIn, step: StepDef, touched: set[str]
 ) -> None:
+    if event.correct is None:
+        # An event that makes no claim about correctness carries no evidence. Guarding
+        # here rather than trusting callers is what keeps a missing field from silently
+        # becoming "wrong".
+        return
+
     obs = Observation(
         correct=bool(event.correct),
         step_type=step.type,
@@ -327,7 +333,11 @@ async def ingest_events(
                     metrics.events_ingested.labels(event_type=event.event_type).inc()
                     accepted += 1
 
-                    if event.event_type in ("attempt", "step_completed") and step is not None:
+                    # Only an attempt is evidence. A step_completed is the bookkeeping
+                    # that follows one, so applying BKT to both counted every success
+                    # twice — and since it carries no `correct` field, the second
+                    # application scored a solved step as a WRONG answer at full weight.
+                    if event.event_type == "attempt" and step is not None:
                         await apply_to_skills(
                             conn, principal.org_id, principal.user_id, event, step, touched
                         )

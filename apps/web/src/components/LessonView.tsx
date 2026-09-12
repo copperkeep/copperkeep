@@ -19,12 +19,18 @@ export function LessonView({
   identity,
   runtime,
   queue,
+  nextLessonTitle,
+  onNextLesson,
+  onSeeSkills,
 }: {
   lesson: Lesson;
   courseId: string;
   identity: Identity;
   runtime: LanguageRuntime | null;
   queue: EventQueue;
+  nextLessonTitle: string | null;
+  onNextLesson: () => void;
+  onSeeSkills: () => void;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
   const step = lesson.steps[stepIndex]!;
@@ -190,6 +196,9 @@ export function LessonView({
   }
 
   const isLast = stepIndex === lesson.steps.length - 1;
+  // A finished lesson needs somewhere to go. Leaving a disabled button on screen tells a
+  // learner they succeeded and then strands them there.
+  const finished = isLast && (answeredCorrectly || step.type === "narrative");
 
   return (
     <div className="lesson">
@@ -318,21 +327,48 @@ export function LessonView({
           <button className="tap" onClick={handleStuck}>
             I&apos;m stuck
           </button>
-          {(answeredCorrectly || step.type === "narrative") && (
+          {(answeredCorrectly || step.type === "narrative") && !isLast && (
             <button
               className="tap tap--primary"
-              onClick={() => setStepIndex((i) => Math.min(i + 1, lesson.steps.length - 1))}
-              disabled={isLast}
+              onClick={() => setStepIndex((i) => i + 1)}
             >
-              {isLast ? "Lesson complete" : "Next"}
+              Next
             </button>
           )}
         </div>
       </section>
 
       <section className="pane pane--run" data-pane={"run" satisfies Pane}>
-        <OutputPane run={run} evaluation={evaluation} />
-        {busy && <p className="note">Running…</p>}
+        {finished ? (
+          <div className="card">
+            <div className="kicker">
+              <span className="label">Lesson complete</span>
+            </div>
+            <h2 className="display">
+              You finished <span className="hl">{lesson.title}</span>
+            </h2>
+            <p>
+              {nextLessonTitle
+                ? "Your skills are saved. Ready for the next one?"
+                : "Your skills are saved. That is the last lesson here for now."}
+            </p>
+            <div className="btns">
+              {nextLessonTitle && (
+                <button className="tap tap--primary" onClick={onNextLesson}>
+                  Start {nextLessonTitle}
+                </button>
+              )}
+              <button className="tap" onClick={onSeeSkills}>
+                See your skills
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <OutputPane run={run} evaluation={evaluation} />
+            {busy && <p className="note">Running…</p>}
+          </>
+        )}
       </section>
     </div>
   );

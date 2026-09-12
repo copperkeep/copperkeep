@@ -24,7 +24,7 @@ All images are multi-arch (`linux/amd64`, `linux/arm64`).
 
 ```sh
 helm install copperkeep oci://ghcr.io/copperkeep/charts/copperkeep \
-  --version 0.1.5 \
+  --version 0.1.6 \
   --namespace copperkeep --create-namespace \
   --set ingress.host=learn.example.com
 ```
