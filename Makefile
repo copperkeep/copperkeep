@@ -56,6 +56,10 @@ helm-golden: ## Accept the current rendering as the new golden files
 smoke: ## Stand up Compose and run the smoke assertions
 	scripts/smoke-compose.sh
 
+.PHONY: e2e
+e2e: ## Browser tests against a running instance (BASE=url to override)
+	scripts/e2e.sh $(BASE)
+
 .PHONY: compose-up
 compose-up: ## Run the published images on this box
 	cd deploy/compose && docker compose pull && docker compose up -d

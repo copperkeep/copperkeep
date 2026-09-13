@@ -17,9 +17,14 @@ COPPERKEEP_HTTP_PORT=8443
 COPPERKEEP_COOKIE_SECURE=false
 EOF
 
-# The images this commit would ship, plus stand-ins for the two the curriculum repo
-# builds. content-base carries an empty-but-valid manifest, which is enough to exercise
-# the API's content dependency and its event validation.
+# The images this commit would ship, plus a stand-in for audio (nothing here plays a
+# sound, and the image ships empty until a Piper voice is vendored).
+#
+# content and runtimes are NOT stubbed. The published curriculum image is used so there
+# are real lessons to walk, and real Pyodide to run them with. Substituting placeholders
+# for either is exactly the stand-in habit that let five bugs through: the empty
+# content-base manifest declares zero courses, so the app has nothing to render and every
+# lesson test times out against a page that is working perfectly.
 cat > docker-compose.override.yml <<'EOF'
 services:
   api:
@@ -28,12 +33,10 @@ services:
     image: copperkeep/api:ci
   web:
     image: copperkeep/web:ci
-  content:
-    image: copperkeep/content-base:ci
   audio:
     image: nginx:1.27-alpine
   runtimes:
-    image: nginx:1.27-alpine
+    image: copperkeep/runtimes:ci
 EOF
 
 cleanup() {
@@ -45,3 +48,11 @@ trap cleanup EXIT
 
 docker compose up -d
 "$ROOT/scripts/smoke-assert.sh" "http://localhost:8443" "$ADMIN_PASSWORD"
+
+# The API-level assertions above cannot see a dead Run button or a lesson that leads
+# nowhere. Opt in with COPPERKEEP_E2E=1 so this script stays usable without browsers
+# installed.
+if [ "${COPPERKEEP_E2E:-0}" = "1" ]; then
+  COPPERKEEP_USERNAME=admin COPPERKEEP_PASSWORD="$ADMIN_PASSWORD" \
+    "$ROOT/scripts/e2e.sh" "http://localhost:8443"
+fi

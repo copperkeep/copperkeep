@@ -38,6 +38,8 @@ jobs:
               - 'deploy/**'
               - 'images/**'
               - 'apps/**'
+              - 'e2e/**'
+              - 'packages/**'
 
   api:
     needs: changes
@@ -122,10 +124,31 @@ jobs:
           docker build -t copperkeep/api:ci -f apps/api/Dockerfile apps/api
           docker build -t copperkeep/web:ci -f apps/web/Dockerfile .
           docker build -t copperkeep/content-base:ci -f images/content/Dockerfile .
+          # Real Pyodide, because the browser tests run actual Python.
+          docker build -t copperkeep/runtimes:ci -f images/runtimes/Dockerfile .
+      # Browsers for the suite that drives the actual UI. Every user-visible bug this
+      # project has shipped lived in that layer and was invisible to the API assertions.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @copperkeep/e2e exec playwright install --with-deps chromium
+
       # Both deployment paths get the same assertions. Two descriptions of one system
       # diverge quietly otherwise.
-      - name: Compose smoke test
+      - name: Compose smoke test + browser tests
+        env:
+          COPPERKEEP_E2E: "1"
         run: scripts/smoke-compose.sh
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
 
       - name: Install k3d
         run: curl -fsSL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
