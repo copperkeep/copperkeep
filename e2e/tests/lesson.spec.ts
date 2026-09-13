@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { signIn, typeCode, waitForRuntime } from "./helpers";
+import { expectLessonLoaded, signIn, typeCode, waitForRuntime } from "./helpers";
 
 test.describe("a lesson, end to end", () => {
   test("runs code, grades it, and leads somewhere when finished", async ({ page }) => {
     await signIn(page);
+    await expectLessonLoaded(page);
 
     // 1 — narrative
     await page.getByRole("button", { name: "Next" }).click();
@@ -38,6 +39,7 @@ test.describe("a lesson, end to end", () => {
 
   test("a wrong answer is graded as wrong, not silently accepted", async ({ page }) => {
     await signIn(page);
+    await expectLessonLoaded(page);
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Hello", exact: true }).click();
     await page.getByRole("button", { name: "Next" }).click();
@@ -53,6 +55,7 @@ test.describe("a lesson, end to end", () => {
 
   test("a syntax error is explained, not a traceback", async ({ page }) => {
     await signIn(page);
+    await expectLessonLoaded(page);
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Hello", exact: true }).click();
     await page.getByRole("button", { name: "Next" }).click();

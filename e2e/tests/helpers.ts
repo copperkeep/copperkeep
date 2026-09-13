@@ -46,3 +46,16 @@ export async function waitForRuntime(page: Page): Promise<void> {
     timeout: 150_000,
   });
 }
+
+/**
+ * Asserts a lesson actually rendered before a test starts clicking through one.
+ *
+ * Without this, a stack serving zero courses looks identical to a broken button: the
+ * test simply waits out its full timeout on a "Next" that was never going to exist.
+ */
+export async function expectLessonLoaded(page: Page): Promise<void> {
+  await expect(
+    page.locator(".pane--read"),
+    "no lesson rendered — is the content service serving real curriculum?",
+  ).toBeVisible({ timeout: 30_000 });
+}
