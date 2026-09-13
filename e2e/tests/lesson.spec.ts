@@ -34,7 +34,17 @@ test.describe("a lesson, end to end", () => {
     // Finishing used to leave a disabled button and nowhere to go. A completed lesson is
     // a destination.
     await expect(page.getByText("Lesson complete")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Start |See your skills/ })).toBeVisible();
+
+    // Asserted separately, and deliberately. One alternation across both labels matches
+    // BOTH buttons once the next lesson unlocks, which is a strict-mode violation that
+    // only appears when the skill state lands before the assertion — a race that passes
+    // or fails depending on timing.
+    await expect(page.getByRole("button", { name: "See your skills" })).toBeVisible();
+
+    // Finishing this lesson masters print-output, which is exactly what the loops lesson
+    // requires — so the next lesson becomes reachable. This is the assertion that would
+    // have caught the whole curriculum being unreachable.
+    await expect(page.getByRole("button", { name: /^Start / })).toBeVisible();
   });
 
   test("a wrong answer is graded as wrong, not silently accepted", async ({ page }) => {
