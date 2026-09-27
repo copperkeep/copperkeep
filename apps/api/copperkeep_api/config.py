@@ -22,6 +22,9 @@ class Settings(BaseSettings):
 
     content_base_url: str = "http://content"
     content_refresh_seconds: int = 300
+    # How often to ask only for manifest.json. A changed contentVersion triggers a full
+    # refresh at once, so a release is picked up in seconds rather than minutes.
+    content_poll_seconds: int = 20
 
     session_secret: str = Field(default="dev-only-change-me", min_length=8)
     session_ttl_hours: int = 720  # device-bound sessions; the login screen should be rare

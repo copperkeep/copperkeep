@@ -53,6 +53,17 @@ def parse_version(value: str) -> tuple[int, ...]:
     return tuple(parts)
 
 
+def should_refresh(
+    published: str | None, loaded: str | None, since_full: int, refresh_every: int
+) -> bool:
+    """Refresh at once when the content service serves a new version; otherwise only on
+    the full-refresh interval. An unreachable service (published None) is not a change —
+    the interval refresh is what logs that and keeps the last-good copy."""
+    if published is not None and published != loaded:
+        return True
+    return since_full >= refresh_every
+
+
 class ContentIndex:
     def __init__(self) -> None:
         self.content_version: str | None = None
@@ -70,6 +81,17 @@ class ContentIndex:
         """A pinned app version against a newer curriculum subscription fails the
         readiness probe rather than going live broken (§11.1)."""
         return parse_version(settings.app_version) >= parse_version(self.min_app_version)
+
+    async def published_version(self) -> str | None:
+        """The contentVersion the content service is serving now, or None if it cannot be
+        reached. One small request, cheap enough to make every few seconds."""
+        base = settings.content_base_url.rstrip("/")
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                manifest = (await client.get(f"{base}/manifest.json")).raise_for_status().json()
+        except Exception:  # noqa: BLE001 - the periodic full refresh reports failures
+            return None
+        return manifest.get("contentVersion")
 
     async def refresh(self) -> bool:
         base = settings.content_base_url.rstrip("/")

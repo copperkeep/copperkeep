@@ -10,7 +10,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from . import db, metrics
 from .config import settings
-from .content import index
+from .content import index, should_refresh
 from .routers import admin, auth, learn, reports
 from .security import hash_secret
 
@@ -18,8 +18,21 @@ log = logging.getLogger(__name__)
 
 
 async def _refresh_content_forever() -> None:
+    # Between full refreshes, poll only the manifest. Otherwise a content release is
+    # served to browsers for up to content_refresh_seconds while the API still holds the
+    # old step index — and rejects progress on every step the release added.
+    since_full = 0
     while True:
-        await asyncio.sleep(settings.content_refresh_seconds)
+        await asyncio.sleep(settings.content_poll_seconds)
+        since_full += settings.content_poll_seconds
+        published = await index.published_version()
+        if not should_refresh(
+            published, index.content_version, since_full, settings.content_refresh_seconds
+        ):
+            continue
+        if published is not None and published != index.content_version:
+            log.info("content %s published; refreshing now", published)
+        since_full = 0
         ok = await index.refresh()
         metrics.content_loaded.set(1 if index.loaded else 0)
         if not ok:
