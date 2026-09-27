@@ -24,6 +24,13 @@ docker compose pull && docker compose up -d
 
 **Do not use Watchtower.** An auto-update landing mid-lesson is a bad experience.
 
+## Upgrading to 0.1.8
+
+Grades programs that read `input()`. Before 0.1.8 every such exercise failed for every
+learner, so curricula that grade `input()` declare `minAppVersion: 0.1.8` — upgrade the
+app **before** the curriculum, or the API fails its readiness probe. The chart's default
+curriculum moves to 2026.09.3.
+
 ## Upgrading to 0.1.3
 
 **0.1.3 requires curriculum 2026.09.2 or newer.** Upgrade both together.
