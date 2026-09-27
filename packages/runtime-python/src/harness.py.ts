@@ -61,41 +61,56 @@ def ck_run(code, stdin_text):
         "failureKind": failure["kind"] if failure else None,
     })
 
+def _all_failed(spec_cases, failure):
+    """A program that never ran cleanly cannot tell us anything about the skill, so the
+    cases are not even attempted."""
+    return json.dumps({
+        "passed": False,
+        "failureKind": failure["kind"],
+        "cases": [{"id": c.get("id", "?"), "passed": False,
+                   "message": failure["message"]} for c in spec_cases],
+    })
+
 def ck_eval(code, spec_json):
     spec = json.loads(spec_json)
-    namespace, stdout, _stderr, failure = _exec(code, "")
+    spec_cases = spec.get("cases", [])
 
-    # A program that never ran cleanly cannot tell us anything about the skill, so the
-    # cases are not even attempted.
-    if failure:
-        return json.dumps({
-            "passed": False,
-            "failureKind": failure["kind"],
-            "cases": [{"id": c.get("id", "?"), "passed": False,
-                       "message": failure["message"]} for c in spec.get("cases", [])],
-        })
+    # A case that brings its own stdin gets a run of its own. The shared, input-less run
+    # exists only for the cases without stdin — a program that calls input() must never
+    # be judged by a run that had nothing to give it, or every such exercise fails with
+    # EOFError before a single case is looked at.
+    shared = None
+    if not spec_cases or any(not c.get("stdin") for c in spec_cases):
+        shared = _exec(code, "")
+        if shared[3]:
+            return _all_failed(spec_cases, shared[3])
 
     cases = []
-    for case in spec.get("cases", []):
+    run_failure = None
+    for case in spec_cases:
         expected = actual = None
+        if case.get("stdin"):
+            namespace, stdout, _stderr, failure = _exec(code, case["stdin"])
+            if failure:
+                # A syntax error fails identically on every input, and after a timeout
+                # the remaining runs are not worth the wall clock.
+                if failure["kind"] in ("parse", "timeout"):
+                    return _all_failed(spec_cases, failure)
+                run_failure = run_failure or failure
+                cases.append({"id": case["id"], "passed": False,
+                              "message": failure["message"]})
+                continue
+        else:
+            namespace, stdout = shared[0], shared[1]
         try:
             if "assert" in case and case["assert"]:
-                actual_value = eval(case["assert"], dict(namespace))
-                passed = bool(actual_value)
+                passed = bool(eval(case["assert"], dict(namespace)))
                 expected = "true"
                 actual = "true" if passed else "false"
             else:
-                if case.get("stdin"):
-                    _, actual_out, _, case_failure = _exec(code, case["stdin"])
-                    if case_failure:
-                        cases.append({"id": case["id"], "passed": False,
-                                      "message": case_failure["message"]})
-                        continue
-                else:
-                    actual_out = stdout
                 expected = case.get("expectedStdout", "")
-                actual = actual_out
-                passed = actual_out.strip() == expected.strip()
+                actual = stdout
+                passed = stdout.strip() == expected.strip()
         except BaseException as exc:
             cases.append({"id": case["id"], "passed": False, "message": _friendly(exc)})
             continue
@@ -104,10 +119,13 @@ def ck_eval(code, spec_json):
                       "actual": actual, "message": case.get("message", "")})
 
     passed = all(c["passed"] for c in cases) and len(cases) > 0
-    return json.dumps({
-        "passed": passed,
+    if passed:
+        kind = None
+    elif run_failure:
+        # It crashed on at least one input: not a clean run, so not the full signal.
+        kind = run_failure["kind"]
+    else:
         # Ran clean and failed the tests: the real signal (§6.2).
-        "failureKind": None if passed else "semantic",
-        "cases": cases,
-    })
+        kind = "semantic"
+    return json.dumps({"passed": passed, "failureKind": kind, "cases": cases})
 `;

@@ -27,7 +27,10 @@ export interface TestCase {
   id: string;
   /** Expression evaluated after the learner's code; truthy means passed. */
   assert?: string;
-  /** Or: run with this stdin and compare stdout. */
+  /**
+   * Run with this stdin — in a run of its own — then check `assert` or `expectedStdout`
+   * against that run. Cases without stdin share one input-less run.
+   */
   stdin?: string;
   expectedStdout?: string;
   /** Learner-facing, reading-tier aware. Never a stack trace at grade3. */
