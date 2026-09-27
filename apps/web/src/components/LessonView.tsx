@@ -69,7 +69,7 @@ export function LessonView({
     setAiHint(null);
     setChoice(null);
     setAnsweredCorrectly(false);
-    setOrder(shuffle([...(step.lines ?? []), ...(step.distractors ?? [])]));
+    setOrder(unsolvedShuffle(step.lines ?? [], step.distractors ?? []));
     startedAt.current = Date.now();
     queue.push({ event_type: "step_started", course_id: courseId, step_id: step.id });
   }, [step.id, courseId, queue, step.starter, step.lines, step.distractors]);
@@ -190,7 +190,7 @@ export function LessonView({
   function submitParsons() {
     const expected = step.lines ?? [];
     // The distractors have to end up below the answer, not merely somewhere else.
-    const correct = expected.every((line, i) => order[i] === line);
+    const correct = isSolved(order, expected);
     setChoice(correct ? "correct" : "incorrect");
     recordChoice(correct);
   }
@@ -392,6 +392,25 @@ function move(items: string[], from: number, delta: number): string[] {
   const [item] = next.splice(from, 1);
   next.splice(from + delta, 0, item!);
   return next;
+}
+
+/**
+ * A shuffle that happens to come out already solved lets "Check" pass without the
+ * learner moving a line — a free correct answer fed to the mastery estimate. With two
+ * lines and two decoys that is one load in twelve, so reshuffle until it is unsolved.
+ * The attempt cap only matters when every order is solved (all lines identical).
+ */
+function unsolvedShuffle(lines: string[], distractors: string[]): string[] {
+  const items = [...lines, ...distractors];
+  let next = shuffle(items);
+  for (let attempt = 0; attempt < 20 && isSolved(next, lines); attempt += 1) {
+    next = shuffle(items);
+  }
+  return next;
+}
+
+function isSolved(order: string[], lines: string[]): boolean {
+  return lines.every((line, i) => order[i] === line);
 }
 
 function shuffle(items: string[]): string[] {
