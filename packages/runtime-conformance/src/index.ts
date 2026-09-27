@@ -59,6 +59,29 @@ export const CONFORMANCE_CASES: ConformanceCase[] = [
     },
   },
   {
+    name: "evaluate grades a program that reads input",
+    async run(runtime) {
+      // Every case brings its own stdin, so no input-less run may happen first: that run
+      // would raise EOFError and fail the exercise before any case is looked at.
+      const result = await runtime.evaluate("print('Hi ' + input())", {
+        cases: [
+          { id: "mo", stdin: "Mo", expectedStdout: "Hi Mo", message: "greets Mo" },
+          { id: "zed", stdin: "Zed", expectedStdout: "Hi Zed", message: "greets Zed" },
+        ],
+      });
+      assert(result.passed, `a correct input() program should pass, got ${result.failureKind}`);
+    },
+  },
+  {
+    name: "an assert case with stdin sees that run's variables",
+    async run(runtime) {
+      const result = await runtime.evaluate("n = int(input())\ndouble = n * 2", {
+        cases: [{ id: "four", stdin: "4", assert: "double == 8", message: "doubles 4" }],
+      });
+      assert(result.passed, "the assert should see the namespace of its own stdin run");
+    },
+  },
+  {
     name: "evaluate passes a correct solution",
     async run(runtime) {
       const result = await runtime.evaluate("total = 2 + 2", SPEC("total == 4"));
