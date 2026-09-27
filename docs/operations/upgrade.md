@@ -24,6 +24,12 @@ docker compose pull && docker compose up -d
 
 **Do not use Watchtower.** An auto-update landing mid-lesson is a bad experience.
 
+## Upgrading to 0.1.9
+
+No action needed. Parsons steps no longer start already solved, and the API notices a
+new curriculum release within about 20 seconds instead of up to five minutes. The chart's
+default curriculum moves to 2026.09.4.
+
 ## Upgrading to 0.1.8
 
 Grades programs that read `input()`. Before 0.1.8 every such exercise failed for every
