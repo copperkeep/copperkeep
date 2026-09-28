@@ -1,10 +1,17 @@
 import type {
+  ActivityItem,
   EventBatchResponse,
   EvalResult,
   Hint,
   Identity,
+  LessonProgress,
+  Person,
+  PersonUpdate,
   ProgressEvent,
+  ReadingTier,
+  Report,
   SkillState,
+  Submission,
 } from "@copperkeep/contracts";
 import { config } from "./config";
 
@@ -33,6 +40,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await response.json()) as T;
 }
 
+function json(method: string, body: unknown): RequestInit {
+  return { method, body: JSON.stringify(body) };
+}
+
 export const api = {
   login: (org: string, username: string, secret: string, method: "pin" | "password" = "pin") =>
     request<Identity>("/auth/login", {
@@ -57,7 +68,50 @@ export const api = {
         authored_hints_shown: authoredHintsShown,
       }),
     }),
-  report: (learnerId: string) => request<unknown>(`/reports/${learnerId}`),
+  report: (learnerId: string, windowDays = 7) =>
+    request<Report>(`/reports/${learnerId}?window_days=${windowDays}`),
+
+  // The adult view. Every call is org-scoped and permission-checked server-side.
+  people: () => request<Person[]>("/admin/users"),
+  createLearner: (body: {
+    username: string;
+    display_name: string;
+    pin: string;
+    reading_tier: ReadingTier;
+  }) => request<{ learnerId: string }>("/admin/learners", json("POST", body)),
+  createAdult: (body: {
+    username: string;
+    display_name: string;
+    password: string;
+    is_admin: boolean;
+  }) => request<{ userId: string }>("/admin/adults", json("POST", body)),
+  updatePerson: (id: string, body: PersonUpdate) =>
+    request<Person>(`/admin/users/${id}`, json("PATCH", body)),
+  resetPin: (id: string, pin: string) =>
+    request<void>(`/admin/learners/${id}/pin`, json("POST", { pin })),
+  setPassword: (id: string, password: string) =>
+    request<void>(`/admin/users/${id}/password`, json("POST", { password })),
+  unlock: (id: string) => request<void>(`/admin/learners/${id}/unlock`, { method: "POST" }),
+  link: (adultId: string, learnerId: string) =>
+    request<void>(
+      "/admin/guardianship",
+      json("PUT", { adult_id: adultId, learner_id: learnerId }),
+    ),
+  unlink: (adultId: string, learnerId: string) =>
+    request<void>(
+      "/admin/guardianship",
+      json("DELETE", { adult_id: adultId, learner_id: learnerId }),
+    ),
+  removePerson: (id: string) => request<void>(`/admin/users/${id}`, { method: "DELETE" }),
+  learnerSkills: (id: string) => request<SkillState[]>(`/learners/${id}/skills`),
+  learnerProgress: (id: string) => request<LessonProgress[]>(`/learners/${id}/progress`),
+  learnerActivity: (id: string, limit = 200) =>
+    request<ActivityItem[]>(`/learners/${id}/activity?limit=${limit}`),
+  learnerSubmissions: (id: string, stepId?: string, limit = 50) =>
+    request<Submission[]>(
+      `/learners/${id}/submissions?limit=${limit}` +
+        (stepId ? `&step_id=${encodeURIComponent(stepId)}` : ""),
+    ),
   sendEvents: (events: ProgressEvent[]) =>
     request<EventBatchResponse>("/events", {
       method: "POST",

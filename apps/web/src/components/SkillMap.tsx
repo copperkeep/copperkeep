@@ -15,14 +15,22 @@ function stateOf(skill: SkillState): { modifier: string; glyph: string; word: st
   return { modifier: "locked", glyph: "·", word: "Not yet" };
 }
 
-export function SkillMap({ skills }: { skills: SkillState[] }) {
+export function SkillMap({
+  skills,
+  learnerName,
+}: {
+  skills: SkillState[];
+  /** Set when an adult is looking at someone else's map. */
+  learnerName?: string;
+}) {
   return (
     <section className="card">
       <div className="kicker">
-        <span className="label">Your skills</span>
+        <span className="label">{learnerName ? `${learnerName}'s skills` : "Your skills"}</span>
       </div>
       <h2 className="display">
-        What you <span className="hl">know</span> so far
+        What {learnerName ?? "you"} <span className="hl">{learnerName ? "knows" : "know"}</span>{" "}
+        so far
       </h2>
 
       <div className="skill-map">

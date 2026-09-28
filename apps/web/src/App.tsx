@@ -9,9 +9,10 @@ import { Conformance } from "./components/Conformance";
 import { LessonNav, type LessonEntry } from "./components/LessonNav";
 import { LessonView } from "./components/LessonView";
 import { Login } from "./components/Login";
+import { Family } from "./components/family/Family";
 import { SkillMap } from "./components/SkillMap";
 
-type View = "lesson" | "map" | "conformance";
+type View = "family" | "lesson" | "map" | "conformance";
 
 export function App() {
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -19,7 +20,7 @@ export function App() {
   const [skills, setSkills] = useState<SkillState[]>([]);
   const [runtime, setRuntime] = useState<LanguageRuntime | null>(null);
   const [loaderState, setLoaderState] = useState<"absent" | "fetching" | "ready">("absent");
-  const [view, setView] = useState<View>(() => hashView());
+  const [view, setView] = useState<View>(() => hashView() ?? "lesson");
   const [theme, setTheme] = useState<Theme>("auto");
   const [dyslexia, setDyslexia] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
@@ -37,7 +38,7 @@ export function App() {
   queue.current ??= new EventQueue(mergeSkills);
 
   useEffect(() => {
-    const onHash = () => setView(hashView());
+    const onHash = () => setView(hashView() ?? "lesson");
     globalThis.addEventListener("hashchange", onHash);
     return () => globalThis.removeEventListener("hashchange", onHash);
   }, []);
@@ -46,6 +47,13 @@ export function App() {
   useEffect(() => {
     api.me().then(setIdentity, () => setIdentity(null));
   }, []);
+
+  // An adult's home is the Family view; a learner's is their lesson. A view named in the
+  // URL always wins, so links and the browser tests land where they ask to.
+  useEffect(() => {
+    if (!identity || hashView()) return;
+    setView(identity.role === "adult" ? "family" : "lesson");
+  }, [identity]);
 
   useEffect(() => {
     if (!identity) return;
@@ -195,7 +203,10 @@ export function App() {
         <div className="controls">
           <span className="label">View</span>
           <div className="seg" role="group" aria-label="View">
-            {(["lesson", "map", "conformance"] as View[]).map((option) => (
+            {(identity.role === "adult"
+              ? (["family", "lesson", "map", "conformance"] as View[])
+              : (["lesson", "map", "conformance"] as View[])
+            ).map((option) => (
               <button
                 key={option}
                 className="tap tap--quiet"
@@ -205,7 +216,7 @@ export function App() {
                   setView(option);
                 }}
               >
-                {option === "lesson" ? "Lesson" : option === "map" ? "Skills" : "Runtime"}
+                {VIEW_LABEL[option]}
               </button>
             ))}
           </div>
@@ -254,6 +265,9 @@ export function App() {
         </div>
       )}
 
+      {view === "family" && identity.role === "adult" && (
+        <Family identity={identity} courses={courses} />
+      )}
       {view === "conformance" && <Conformance runtime={runtime} />}
       {view === "map" && <SkillMap skills={skills} />}
       {view === "lesson" &&
@@ -291,7 +305,17 @@ export function App() {
   );
 }
 
-function hashView(): View {
+const VIEW_LABEL: Record<View, string> = {
+  family: "Family",
+  lesson: "Lesson",
+  map: "Skills",
+  conformance: "Runtime",
+};
+
+/** The view named in the URL, or null when there is none. */
+function hashView(): View | null {
   const hash = globalThis.location?.hash.replace("#", "");
-  return hash === "map" || hash === "conformance" ? hash : "lesson";
+  return hash === "family" || hash === "lesson" || hash === "map" || hash === "conformance"
+    ? hash
+    : null;
 }
