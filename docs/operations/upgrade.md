@@ -24,6 +24,13 @@ docker compose pull && docker compose up -d
 
 **Do not use Watchtower.** An auto-update landing mid-lesson is a bad experience.
 
+## Upgrading to 0.1.11
+
+Runs migration `0002_org_admin.sql` (the chart's pre-upgrade Job does this). It adds
+`users.is_admin` and makes the earliest adult in each org the org admin — on a fresh
+install, the bootstrap adult. Adults now land on the new Family view: accounts,
+reports and learner progress. No other action needed.
+
 ## Upgrading to 0.1.10
 
 No action needed. Lessons are browsed from one bar and an outline instead of a row of
