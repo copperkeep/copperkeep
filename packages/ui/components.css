@@ -90,6 +90,12 @@ body {
   color: var(--fg-muted);
 }
 
+/* A toggle has to look toggled. Segmented controls restyle this for their own buttons. */
+.tap--quiet[aria-pressed="true"] {
+  border-color: var(--accent-alt);
+  color: var(--fg);
+}
+
 /* ---------- type ---------- */
 
 .display {
