@@ -66,7 +66,72 @@ export interface Identity {
   reading_tier: ReadingTier;
   theme: "auto" | "light" | "dark";
   content_version: string | null;
+  /** The org admin sees and manages every account; other adults only their learners. */
+  is_admin?: boolean;
   owned_learners: { id: string; displayName: string; readingTier: ReadingTier }[];
+}
+
+/** One account, as the adult view lists it. */
+export interface Person {
+  id: string;
+  username: string;
+  display_name: string;
+  role: "adult" | "learner";
+  is_admin: boolean;
+  reading_tier: ReadingTier;
+  created_at: string;
+  last_active: string | null;
+  locked: boolean;
+  failed_attempts: number;
+  /** A learner's linked adults, or an adult's linked learners. */
+  linked: string[];
+}
+
+export interface PersonUpdate {
+  display_name?: string;
+  username?: string;
+  reading_tier?: ReadingTier;
+  is_admin?: boolean;
+}
+
+export interface LessonProgress {
+  course_id: string;
+  lesson_id: string;
+  steps_total: number;
+  steps_completed: number;
+  last_activity: string | null;
+}
+
+export interface ActivityItem {
+  event_type: ProgressEvent["event_type"];
+  course_id: string | null;
+  step_id: string | null;
+  correct: boolean | null;
+  failure_kind: FailureKind | null;
+  hint_source: "authored" | "ai" | null;
+  occurred_at: string;
+}
+
+export interface Submission {
+  id: string;
+  step_id: string;
+  code: string;
+  passed: boolean | null;
+  eval_result: Record<string, unknown>;
+  occurred_at: string;
+}
+
+/** The weekly parent digest (plan §12.5). Never a grade. */
+export interface Report {
+  learner_id: string;
+  display_name: string;
+  window_days: number;
+  skills_mastered: string[];
+  minutes_on_task: number;
+  stuck_on: { skillId: string; consecutiveFailures: number }[];
+  review_performance: Record<string, number>;
+  syntax_trouble: number;
+  questions_to_ask: string[];
 }
 
 export interface SubmissionRequest {

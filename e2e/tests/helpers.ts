@@ -6,8 +6,28 @@ export const PASSWORD = process.env.COPPERKEEP_PASSWORD ?? "smoke-admin-password
 /** "password" for an adult, "pin" for a learner — the credential a child actually uses. */
 export const METHOD = process.env.COPPERKEEP_METHOD ?? "password";
 
-export async function signIn(page: Page): Promise<void> {
-  await page.goto("/");
+export interface Credentials {
+  username: string;
+  secret: string;
+  method: "pin" | "password";
+}
+
+const ADMIN: Credentials = {
+  username: USERNAME,
+  secret: PASSWORD,
+  method: METHOD === "pin" ? "pin" : "password",
+};
+
+/**
+ * Signs in and lands on `view`. Adults otherwise land on the Family view, so the lesson
+ * tests ask for #lesson explicitly — a view named in the URL always wins.
+ */
+export async function signIn(
+  page: Page,
+  view: "lesson" | "family" = "lesson",
+  who: Credentials = ADMIN,
+): Promise<void> {
+  await page.goto(`/#${view}`);
 
   const username = page.locator("#username");
   const shell = page.getByRole("heading", { name: "Copperkeep", level: 1 });
@@ -19,12 +39,12 @@ export async function signIn(page: Page): Promise<void> {
 
   if (await username.isVisible()) {
     await page.locator("#org").fill(ORG);
-    await username.fill(USERNAME);
+    await username.fill(who.username);
     // The form defaults to a PIN, which is the right default for a child.
-    if (METHOD === "password") {
+    if (who.method === "password") {
       await page.getByRole("button", { name: "I'm a grown-up" }).click();
     }
-    await page.locator("#secret").fill(PASSWORD);
+    await page.locator("#secret").fill(who.secret);
     await page.getByRole("button", { name: "Go" }).click();
   }
 
