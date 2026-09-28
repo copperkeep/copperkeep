@@ -35,10 +35,16 @@ test.describe("finding your way around", () => {
     await expectLessonLoaded(page);
 
     await page.locator(".lesson-bar__current").click();
-    // Any open lesson other than the current one will do.
+    // Any open lesson other than the current one will do. On a brand-new account only the
+    // first lesson is open; lesson.spec runs first (one worker, in order) and finishing it
+    // masters print-output, which opens the rest of the first module.
     const target = page
       .locator(".outline__lesson:not([aria-disabled='true']):not([aria-current='true'])")
       .first();
+    await expect(
+      target,
+      "no second lesson is open — did lesson.spec finish the first lesson?",
+    ).toBeVisible({ timeout: 10_000 });
     const title = (await target.innerText()).trim();
     await target.click();
     await expect(page.locator(".lesson-bar__title")).toContainText(title);
