@@ -89,4 +89,7 @@
 [data-font="dyslexia"] {
   --font-body: "Atkinson Hyperlegible", Inter, system-ui, sans-serif;
   --font-display: "Atkinson Hyperlegible", "Inter Tight", system-ui, sans-serif;
+  /* A little more room between letters and words helps as much as the face does. */
+  letter-spacing: 0.02em;
+  word-spacing: 0.08em;
 }

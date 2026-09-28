@@ -6,6 +6,7 @@ import { config } from "./config";
 import { loadCourse, loadManifest, satisfiesMinAppVersion } from "./content";
 import { applyDyslexiaFont, applyTheme, applyTier, type Theme } from "./theme";
 import { Conformance } from "./components/Conformance";
+import { LessonNav, type LessonEntry } from "./components/LessonNav";
 import { LessonView } from "./components/LessonView";
 import { Login } from "./components/Login";
 import { SkillMap } from "./components/SkillMap";
@@ -14,7 +15,7 @@ type View = "lesson" | "map" | "conformance";
 
 export function App() {
   const [identity, setIdentity] = useState<Identity | null>(null);
-  const [course, setCourse] = useState<Course | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [skills, setSkills] = useState<SkillState[]>([]);
   const [runtime, setRuntime] = useState<LanguageRuntime | null>(null);
   const [loaderState, setLoaderState] = useState<"absent" | "fetching" | "ready">("absent");
@@ -67,8 +68,8 @@ export function App() {
           );
           return;
         }
-        const first = manifest.courses[0];
-        if (first) setCourse(await loadCourse(first.path));
+        // Every course, not just the first: Python B and C used to be unreachable.
+        setCourses(await Promise.all(manifest.courses.map((entry) => loadCourse(entry.path))));
       })
       .catch(() => setBanner("Lessons are not available right now. Your progress is safe."));
   }, [identity]);
@@ -112,14 +113,16 @@ export function App() {
     };
   }, [learnerId]);
 
-  // Every lesson in the course, in order. Previously this rendered modules[0].lessons[0]
-  // and nothing else, so most of the curriculum was unreachable.
-  const lessons = useMemo(
+  // Every lesson in every course, in order. Previously this rendered the first course
+  // only, so most of the curriculum was unreachable.
+  const lessons = useMemo<LessonEntry[]>(
     () =>
-      course?.modules.flatMap((module) =>
-        module.lessons.map((lesson) => ({ lesson, moduleTitle: module.title })),
-      ) ?? [],
-    [course],
+      courses.flatMap((course) =>
+        course.modules.flatMap((module) =>
+          module.lessons.map((lesson) => ({ course, lesson, moduleTitle: module.title })),
+        ),
+      ),
+    [courses],
   );
   const mastered = useMemo(
     () => new Set(skills.filter((skill) => skill.mastered).map((skill) => skill.skill_id)),
@@ -132,6 +135,47 @@ export function App() {
     (lesson: Lesson) =>
       lesson.steps.every((step) => step.prerequisites.every((skill) => mastered.has(skill))),
     [mastered],
+  );
+  // Done means every skill the lesson teaches as primary is mastered — progress the
+  // server already computes, rather than a second record of "finished" to keep in sync.
+  const isDone = useCallback(
+    (lesson: Lesson) => {
+      const taught = lesson.steps.flatMap((step) =>
+        step.skills.filter((ref) => ref.weight === "primary").map((ref) => ref.id),
+      );
+      return taught.length > 0 && taught.every((skill) => mastered.has(skill));
+    },
+    [mastered],
+  );
+
+  // Come back to the lesson you left. Per-device convenience only: storage can be absent
+  // (private windows, blocked site data), so every access is guarded.
+  const positionKey = identity ? `copperkeep.lesson.${identity.user_id}` : null;
+  useEffect(() => {
+    if (!positionKey || lessons.length === 0) return;
+    let saved: string | null = null;
+    try {
+      saved = globalThis.localStorage?.getItem(positionKey) ?? null;
+    } catch {
+      return;
+    }
+    const index = lessons.findIndex(
+      (entry) => `${entry.course.id}/${entry.lesson.id}` === saved,
+    );
+    if (index !== -1) setLessonIndex(index);
+  }, [positionKey, lessons]);
+  const selectLesson = useCallback(
+    (index: number) => {
+      setLessonIndex(index);
+      const entry = lessons[index];
+      if (!positionKey || !entry) return;
+      try {
+        globalThis.localStorage?.setItem(positionKey, `${entry.course.id}/${entry.lesson.id}`);
+      } catch {
+        // storage unavailable: the lesson still changes, it just is not remembered
+      }
+    },
+    [lessons, positionKey],
   );
 
   // Every hook above this line, without exception. Returning early before a hook
@@ -213,40 +257,25 @@ export function App() {
       {view === "conformance" && <Conformance runtime={runtime} />}
       {view === "map" && <SkillMap skills={skills} />}
       {view === "lesson" &&
-        (lesson && course ? (
+        (lesson && current ? (
           <>
-            {lessons.length > 1 && (
-              <nav className="chips" style={{ marginBottom: 16 }} aria-label="Lessons">
-                {lessons.map((entry, i) => {
-                  const open = isOpen(entry.lesson);
-                  return (
-                    <button
-                      key={entry.lesson.id}
-                      className="tap tap--quiet"
-                      aria-pressed={i === lessonIndex}
-                      aria-disabled={!open}
-                      title={open ? entry.moduleTitle : "Finish the earlier lessons first"}
-                      onClick={() => open && setLessonIndex(i)}
-                      style={{
-                        opacity: open ? 1 : 0.45,
-                        borderColor: i === lessonIndex ? "var(--accent-alt)" : undefined,
-                      }}
-                    >
-                      {open ? entry.lesson.title : `${entry.lesson.title} (locked)`}
-                    </button>
-                  );
-                })}
-              </nav>
-            )}
+            <LessonNav
+              courses={courses}
+              entries={lessons}
+              current={lessonIndex}
+              isOpen={isOpen}
+              isDone={isDone}
+              onSelect={selectLesson}
+            />
             <LessonView
-              key={lesson.id}
+              key={`${current.course.id}/${lesson.id}`}
               lesson={lesson}
-              courseId={course.id}
+              courseId={current.course.id}
               identity={identity}
               runtime={runtime}
               queue={queue.current!}
               nextLessonTitle={nextOpen === -1 ? null : lessons[nextOpen]!.lesson.title}
-              onNextLesson={() => nextOpen !== -1 && setLessonIndex(nextOpen)}
+              onNextLesson={() => nextOpen !== -1 && selectLesson(nextOpen)}
               onSeeSkills={() => {
                 globalThis.location.hash = "map";
                 setView("map");

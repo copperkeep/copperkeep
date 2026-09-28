@@ -116,3 +116,142 @@
     height: 260px;
   }
 }
+
+/* ---------- lesson navigation ---------- */
+
+.lesson-nav {
+  margin-bottom: 16px;
+}
+
+.lesson-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lesson-bar__current {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--tap-min);
+  padding: 6px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--ink-700);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* Prev, current and next stay on one line at phone width; only the count wraps. */
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 560px;
+}
+
+.lesson-bar__current[aria-expanded="true"] {
+  border-color: var(--accent-alt);
+}
+
+.lesson-bar__title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.lesson-bar__count {
+  margin-left: auto;
+}
+
+.outline {
+  margin-top: 8px;
+  display: grid;
+  gap: 16px;
+}
+
+.outline .seg {
+  justify-self: start;
+  flex-wrap: wrap;
+}
+
+.outline__modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px 24px;
+}
+
+.outline__module h3 {
+  margin: 0 0 6px;
+}
+
+.outline__module ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.outline__lesson {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.outline__lesson:hover:not([aria-disabled="true"]) {
+  background: var(--ink-700);
+}
+
+.outline__lesson[aria-current="true"] {
+  border-color: var(--accent-alt);
+  font-weight: 600;
+}
+
+.outline__lesson[aria-disabled="true"] {
+  color: var(--fg-muted);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.outline__mark {
+  display: inline-flex;
+  justify-content: center;
+  width: 1.2em;
+  flex: none;
+  color: var(--accent);
+  text-align: center;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lesson-bar__current .label {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  .lesson-bar__count {
+    flex-basis: 100%;
+    margin-left: 0;
+    text-align: center;
+  }
+}
