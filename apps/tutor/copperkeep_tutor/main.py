@@ -134,7 +134,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Copperkeep Tutor", version="0.1.10", lifespan=lifespan)
+app = FastAPI(title="Copperkeep Tutor", version="0.1.11", lifespan=lifespan)
 
 
 @app.get("/healthz", include_in_schema=False)
