@@ -68,10 +68,11 @@ curl -fsS -c "$jar" -X POST "$BASE/v1/auth/login" \
   | grep -q '"role":"adult"' || fail "adult login"
 
 echo "--- an adult can create a learner"
-curl -fsS -b "$jar" -X POST "$BASE/v1/admin/learners" \
+created="$(curl -fsS -b "$jar" -X POST "$BASE/v1/admin/learners" \
   -H 'Content-Type: application/json' \
-  -d '{"username":"jada","display_name":"Jada","pin":"1234","reading_tier":"grade3"}' \
-  | grep -q learnerId || fail "create learner"
+  -d '{"username":"jada","display_name":"Jada","pin":"1234","reading_tier":"grade3"}')"
+grep -q learnerId <<<"$created" || fail "create learner"
+jada="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["learnerId"])' <<<"$created")"
 
 echo "--- the learner can sign in and read a skill map"
 learner_jar="$(mktemp)"
@@ -80,6 +81,66 @@ curl -fsS -c "$learner_jar" -X POST "$BASE/v1/auth/login" \
   -d '{"org":"home","username":"jada","method":"pin","secret":"1234"}' \
   | grep -q '"role":"learner"' || fail "learner login"
 curl -fsS -b "$learner_jar" "$BASE/v1/skills" > /dev/null || fail "skills"
+
+echo "--- the bootstrap adult is the org admin, and sees every account"
+curl -fsS -b "$jar" "$BASE/v1/me" | grep -q '"is_admin":true' || fail "admin flag on /me"
+people="$(curl -fsS -b "$jar" "$BASE/v1/admin/users")"
+grep -q '"username":"jada"' <<<"$people" || fail "jada missing from the account list"
+grep -q '"username":"admin"' <<<"$people" || fail "admin missing from the account list"
+
+echo "--- an account can be edited, and a username clash is refused"
+curl -fsS -b "$jar" -X PATCH "$BASE/v1/admin/users/$jada" \
+  -H 'Content-Type: application/json' \
+  -d '{"display_name":"Jada C","reading_tier":"adult"}' \
+  | grep -q '"reading_tier":"adult"' || fail "edit learner"
+code="$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" -X PATCH "$BASE/v1/admin/users/$jada" \
+  -H 'Content-Type: application/json' -d '{"username":"admin"}')"
+[ "$code" = "409" ] || fail "expected 409 on a username clash, got $code"
+curl -fsS -b "$jar" -X POST "$BASE/v1/admin/learners/$jada/pin" \
+  -H 'Content-Type: application/json' -d '{"pin":"1234"}' || fail "reset pin"
+
+echo "--- the learner's progress, skills and code are visible to the admin"
+started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+curl -fsS -b "$learner_jar" -X POST "$BASE/v1/events" -H 'Content-Type: application/json' \
+  -d "{\"events\":[{\"event_type\":\"step_started\",\"step_id\":\"py.printing.say-hello.say-hello\",\"occurred_at\":\"${started}\"}]}" \
+  > /dev/null || fail "step_started"
+curl -fsS -b "$learner_jar" -X POST "$BASE/v1/submissions" -H 'Content-Type: application/json' \
+  -d '{"step_id":"py.printing.say-hello.say-hello","code":"print(\"Hello\")","eval_result":{"passed":true,"cases":[]}}' \
+  > /dev/null || fail "submission"
+curl -fsS -b "$jar" "$BASE/v1/learners/$jada/progress" | grep -q '"lesson_id":"say-hello"' \
+  || fail "progress rollup"
+curl -fsS -b "$jar" "$BASE/v1/learners/$jada/activity" | grep -q step_started || fail "activity"
+curl -fsS -b "$jar" "$BASE/v1/learners/$jada/submissions" | grep -q 'print' || fail "submissions"
+curl -fsS -b "$jar" "$BASE/v1/learners/$jada/skills" | grep -q print-output || fail "learner skills"
+curl -fsS -b "$jar" "$BASE/v1/reports/$jada" | grep -q questions_to_ask || fail "report"
+
+echo "--- a second adult sees only the learners linked to them"
+curl -fsS -b "$jar" -X POST "$BASE/v1/admin/adults" -H 'Content-Type: application/json' \
+  -d '{"username":"sam","display_name":"Sam","password":"sam-password-1"}' \
+  | grep -q userId || fail "create adult"
+sam_jar="$(mktemp)"
+sam_login="$(curl -fsS -c "$sam_jar" -X POST "$BASE/v1/auth/login" -H 'Content-Type: application/json' \
+  -d '{"org":"home","username":"sam","method":"password","secret":"sam-password-1"}')"
+sam="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["user_id"])' <<<"$sam_login")"
+code="$(curl -s -o /dev/null -w '%{http_code}' -b "$sam_jar" "$BASE/v1/learners/$jada/progress")"
+[ "$code" = "403" ] || fail "an unlinked adult read a learner's progress ($code)"
+code="$(curl -s -o /dev/null -w '%{http_code}' -b "$sam_jar" -X POST "$BASE/v1/admin/adults" \
+  -H 'Content-Type: application/json' -d '{"username":"x","display_name":"X","password":"xxxxxxxx"}')"
+[ "$code" = "403" ] || fail "a non-admin adult created an adult ($code)"
+curl -fsS -b "$jar" -X PUT "$BASE/v1/admin/guardianship" -H 'Content-Type: application/json' \
+  -d "{\"adult_id\":\"$sam\",\"learner_id\":\"$jada\"}" || fail "link"
+curl -fsS -b "$sam_jar" "$BASE/v1/learners/$jada/progress" > /dev/null \
+  || fail "a linked adult could not read their learner's progress"
+curl -fsS -b "$sam_jar" "$BASE/v1/admin/users" | grep -q '"username":"jada"' \
+  || fail "a linked adult could not see their learner"
+
+echo "--- the last admin cannot remove themself, but can remove another adult"
+admin_id="$(curl -fsS -b "$jar" "$BASE/v1/me" | python3 -c 'import json,sys; print(json.load(sys.stdin)["user_id"])')"
+code="$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" -X DELETE "$BASE/v1/admin/users/$admin_id")"
+[ "$code" = "409" ] || fail "the admin removed themself ($code)"
+curl -fsS -b "$jar" -X DELETE "$BASE/v1/admin/users/$sam" || fail "remove adult"
+code="$(curl -s -o /dev/null -w '%{http_code}' -b "$sam_jar" "$BASE/v1/me")"
+[ "$code" = "401" ] || fail "a removed adult's session still works ($code)"
 
 echo "--- a forged completion for a step that does not exist is rejected"
 # Execution is client-side, so mastery claims arrive untrusted. This is the floor of
@@ -100,6 +161,16 @@ code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/v1/auth/login" \
   -H 'Content-Type: application/json' \
   -d '{"org":"home","username":"jada","method":"pin","secret":"9999"}')"
 [ "$code" = "429" ] || fail "expected 429 after repeated failures, got $code"
+
+echo "--- the admin sees the lock, and unlocking lets the learner back in"
+curl -fsS -b "$jar" "$BASE/v1/admin/users" | python3 -c '
+import json, sys
+jada = next(p for p in json.load(sys.stdin) if p["username"] == "jada")
+sys.exit(0 if jada["locked"] else 1)' || fail "the lock is not visible to the admin"
+curl -fsS -b "$jar" -X POST "$BASE/v1/admin/learners/$jada/unlock" || fail "unlock"
+curl -fsS -X POST "$BASE/v1/auth/login" -H 'Content-Type: application/json' \
+  -d '{"org":"home","username":"jada","method":"pin","secret":"1234"}' \
+  | grep -q '"role":"learner"' || fail "the learner could not sign in after unlock"
 
 echo
 echo "SMOKE PASSED against $BASE"

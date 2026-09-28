@@ -37,6 +37,7 @@ class LoginResponse(BaseModel):
 
 class MeResponse(LoginResponse):
     org: str
+    is_admin: bool = False
     content_version: str | None
     owned_learners: list[dict[str, Any]] = []
 
@@ -148,3 +149,78 @@ class ResetPin(BaseModel):
 
 class CreateCohort(BaseModel):
     name: str = Field(min_length=1, max_length=120)
+
+
+# --- adult view: accounts ------------------------------------------------------------
+
+USERNAME_PATTERN = r"^[A-Za-z0-9_.-]+$"
+
+
+class PersonOut(BaseModel):
+    id: UUID
+    username: str
+    display_name: str
+    role: Literal["adult", "learner"]
+    is_admin: bool
+    reading_tier: ReadingTier
+    created_at: datetime
+    last_active: datetime | None
+    locked: bool
+    failed_attempts: int
+    # For a learner: the adults linked to them. For an adult: the learners they see.
+    linked: list[UUID]
+
+
+class CreateAdult(BaseModel):
+    username: str = Field(min_length=1, max_length=64, pattern=USERNAME_PATTERN)
+    display_name: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=8, max_length=256)
+    is_admin: bool = False
+
+
+class UpdatePerson(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=64)
+    username: str | None = Field(
+        default=None, min_length=1, max_length=64, pattern=USERNAME_PATTERN
+    )
+    reading_tier: ReadingTier | None = None
+    is_admin: bool | None = None
+
+
+class SetPassword(BaseModel):
+    password: str = Field(min_length=8, max_length=256)
+
+
+class Guardianship(BaseModel):
+    adult_id: UUID
+    learner_id: UUID
+
+
+# --- adult view: progress ------------------------------------------------------------
+
+
+class LessonProgressOut(BaseModel):
+    course_id: str
+    lesson_id: str
+    steps_total: int
+    steps_completed: int
+    last_activity: datetime | None
+
+
+class ActivityOut(BaseModel):
+    event_type: EventType
+    course_id: str | None
+    step_id: str | None
+    correct: bool | None
+    failure_kind: FailureKind | None
+    hint_source: Literal["authored", "ai"] | None
+    occurred_at: datetime
+
+
+class SubmissionOut(BaseModel):
+    id: UUID
+    step_id: str
+    code: str
+    passed: bool | None
+    eval_result: dict[str, Any]
+    occurred_at: datetime
