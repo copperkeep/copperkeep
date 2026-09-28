@@ -24,6 +24,12 @@ docker compose pull && docker compose up -d
 
 **Do not use Watchtower.** An auto-update landing mid-lesson is a bad experience.
 
+## Upgrading to 0.1.10
+
+No action needed. Lessons are browsed from one bar and an outline instead of a row of
+buttons per lesson, every course in the curriculum is reachable (only the first was),
+and the fonts ship in the web image, so "Easier letters" now visibly changes the text.
+
 ## Upgrading to 0.1.9
 
 No action needed. Parsons steps no longer start already solved, and the API notices a
