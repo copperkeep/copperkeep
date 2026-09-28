@@ -100,19 +100,42 @@ curl -fsS -b "$jar" -X POST "$BASE/v1/admin/learners/$jada/pin" \
   -H 'Content-Type: application/json' -d '{"pin":"1234"}' || fail "reset pin"
 
 echo "--- the learner's progress, skills and code are visible to the admin"
-started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-curl -fsS -b "$learner_jar" -X POST "$BASE/v1/events" -H 'Content-Type: application/json' \
-  -d "{\"events\":[{\"event_type\":\"step_started\",\"step_id\":\"py.printing.say-hello.say-hello\",\"occurred_at\":\"${started}\"}]}" \
-  > /dev/null || fail "step_started"
-curl -fsS -b "$learner_jar" -X POST "$BASE/v1/submissions" -H 'Content-Type: application/json' \
-  -d '{"step_id":"py.printing.say-hello.say-hello","code":"print(\"Hello\")","eval_result":{"passed":true,"cases":[]}}' \
-  > /dev/null || fail "submission"
-curl -fsS -b "$jar" "$BASE/v1/learners/$jada/progress" | grep -q '"lesson_id":"say-hello"' \
-  || fail "progress rollup"
-curl -fsS -b "$jar" "$BASE/v1/learners/$jada/activity" | grep -q step_started || fail "activity"
-curl -fsS -b "$jar" "$BASE/v1/learners/$jada/submissions" | grep -q 'print' || fail "submissions"
-curl -fsS -b "$jar" "$BASE/v1/learners/$jada/skills" | grep -q print-output || fail "learner skills"
+# Every endpoint answers either way. Whether there is progress to show depends on the
+# stack serving a real curriculum: Compose uses the published content image, while the
+# chart job serves content-base, whose manifest declares no courses at all.
+for path in progress activity submissions skills; do
+  curl -fsS -b "$jar" "$BASE/v1/learners/$jada/$path" > /dev/null || fail "learner $path"
+done
 curl -fsS -b "$jar" "$BASE/v1/reports/$jada" | grep -q questions_to_ask || fail "report"
+
+courses="$(curl -fsS "$BASE/content/manifest.json" \
+  | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["courses"]))')"
+if [ "$courses" -gt 0 ]; then
+  step="py.printing.say-hello.say-hello"
+  # The API loads the step index on its own schedule; a new stack can answer requests a
+  # few seconds before it holds the curriculum the browser already sees.
+  for _ in $(seq 1 30); do
+    code="$(curl -s -o /dev/null -w '%{http_code}' -b "$learner_jar" -X POST "$BASE/v1/submissions" \
+      -H 'Content-Type: application/json' \
+      -d "{\"step_id\":\"$step\",\"code\":\"print(\\\"Hello\\\")\",\"eval_result\":{\"passed\":true,\"cases\":[]}}")"
+    [ "$code" = "200" ] && break
+    sleep 2
+  done
+  [ "$code" = "200" ] || fail "submission ($code)"
+  started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  curl -fsS -b "$learner_jar" -X POST "$BASE/v1/events" -H 'Content-Type: application/json' \
+    -d "{\"events\":[{\"event_type\":\"step_started\",\"step_id\":\"$step\",\"occurred_at\":\"${started}\"}]}" \
+    | grep -q '"accepted":1' || fail "step_started"
+  curl -fsS -b "$jar" "$BASE/v1/learners/$jada/progress" | grep -q '"lesson_id":"say-hello"' \
+    || fail "progress rollup"
+  curl -fsS -b "$jar" "$BASE/v1/learners/$jada/activity" | grep -q step_started || fail "activity"
+  curl -fsS -b "$jar" "$BASE/v1/learners/$jada/submissions" | grep -q 'print' \
+    || fail "submissions"
+  curl -fsS -b "$jar" "$BASE/v1/learners/$jada/skills" | grep -q print-output \
+    || fail "learner skills"
+else
+  echo "    (no courses served here — progress contents not checked)"
+fi
 
 echo "--- a second adult sees only the learners linked to them"
 curl -fsS -b "$jar" -X POST "$BASE/v1/admin/adults" -H 'Content-Type: application/json' \
