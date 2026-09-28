@@ -171,6 +171,7 @@ async def me(principal: Principal = Depends(current_principal)) -> MeResponse:
         reading_tier=principal.reading_tier,
         theme=principal.theme,
         content_version=index.content_version,
+        is_admin=principal.is_admin,
         owned_learners=[
             {"id": str(r["id"]), "displayName": r["display_name"], "readingTier": r["reading_tier"]}
             for r in learners

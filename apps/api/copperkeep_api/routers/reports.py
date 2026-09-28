@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends
 
 from .. import db
 from ..content import index
-from ..deps import Principal, current_principal, guardianship_or_self
+from ..deps import Principal, can_manage, current_principal
 from ..schemas import ReportResponse
 
 router = APIRouter(prefix="/v1", tags=["reports"])
@@ -28,7 +28,7 @@ async def report(
     window_days: int = 7,
     principal: Principal = Depends(current_principal),
 ) -> ReportResponse:
-    await guardianship_or_self(principal, learner_id)
+    await can_manage(principal, learner_id)
 
     learner = await db.pool().fetchrow(
         "SELECT display_name FROM users WHERE id = $1 AND org_id = $2",

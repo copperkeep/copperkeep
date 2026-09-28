@@ -11,7 +11,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from . import db, metrics
 from .config import settings
 from .content import index, should_refresh
-from .routers import admin, auth, learn, reports
+from .routers import admin, auth, learn, learners, reports
 from .security import hash_secret
 
 log = logging.getLogger(__name__)
@@ -78,8 +78,8 @@ async def _bootstrap_org() -> None:
             await conn.execute(
                 """
                 INSERT INTO users (org_id, username, display_name, role, password_hash,
-                                   reading_tier, theme)
-                VALUES ($1, $2, $2, 'adult', $3, 'adult', 'dark')
+                                   reading_tier, theme, is_admin)
+                VALUES ($1, $2, $2, 'adult', $3, 'adult', 'dark', true)
                 """,
                 org_id,
                 settings.bootstrap_admin_username,
@@ -121,6 +121,7 @@ app.include_router(auth.router)
 app.include_router(learn.router)
 app.include_router(reports.router)
 app.include_router(admin.router)
+app.include_router(learners.router)
 
 
 @app.get("/healthz", include_in_schema=False)

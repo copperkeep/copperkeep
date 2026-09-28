@@ -23,6 +23,7 @@ class Principal:
     reading_tier: str
     theme: str
     session_id: UUID
+    is_admin: bool = False
 
 
 async def current_principal(request: Request) -> Principal:
@@ -33,7 +34,7 @@ async def current_principal(request: Request) -> Principal:
     row = await db.pool().fetchrow(
         """
         SELECT s.id AS session_id, u.id AS user_id, u.org_id, o.slug AS org_slug,
-               u.username, u.display_name, u.role, u.reading_tier, u.theme
+               u.username, u.display_name, u.role, u.reading_tier, u.theme, u.is_admin
         FROM sessions s
         JOIN users u ON u.id = s.user_id
         JOIN orgs o ON o.id = u.org_id
@@ -54,6 +55,7 @@ async def current_principal(request: Request) -> Principal:
         reading_tier=row["reading_tier"],
         theme=row["theme"],
         session_id=row["session_id"],
+        is_admin=row["is_admin"],
     )
 
 
@@ -67,6 +69,12 @@ async def optional_principal(request: Request) -> Principal | None:
 async def require_adult(principal: Principal = Depends(current_principal)) -> Principal:
     if principal.role != "adult":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "adult role required")
+    return principal
+
+
+async def require_admin(principal: Principal = Depends(require_adult)) -> Principal:
+    if not principal.is_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "org admin required")
     return principal
 
 
@@ -109,3 +117,19 @@ async def guardianship_or_self(principal: Principal, learner_id: UUID) -> None:
     )
     if not linked:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "not this learner's guardian")
+
+
+async def can_manage(principal: Principal, user_id: UUID) -> None:
+    """Who may see or change an account: its owner, the org admin, or — for a learner —
+    an adult linked to them in guardianship. Raises 404 for a user in another org so an
+    id from elsewhere reveals nothing."""
+    if principal.user_id == user_id:
+        return
+    exists = await db.pool().fetchval(
+        "SELECT 1 FROM users WHERE org_id = $1 AND id = $2", principal.org_id, user_id
+    )
+    if not exists:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    if principal.is_admin:
+        return
+    await guardianship_or_self(principal, user_id)

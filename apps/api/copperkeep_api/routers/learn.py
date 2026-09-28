@@ -15,6 +15,7 @@ import json
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -349,19 +350,23 @@ async def ingest_events(
     return EventBatchResponse(
         accepted=accepted,
         rejected=rejected,
-        skill_state=await _skill_state(principal, only=touched or None),
+        skill_state=await _skill_state(
+            principal.org_id, principal.user_id, only=touched or None
+        ),
     )
 
 
-async def _skill_state(principal: Principal, only: set[str] | None = None) -> list[SkillStateOut]:
+async def _skill_state(
+    org_id: UUID, user_id: UUID, only: set[str] | None = None
+) -> list[SkillStateOut]:
     rows = await db.pool().fetch(
         """
         SELECT skill_id, p_known, opportunities, mastered_at, next_review_at,
                consecutive_fails, decayed
         FROM skill_state WHERE org_id = $1 AND user_id = $2
         """,
-        principal.org_id,
-        principal.user_id,
+        org_id,
+        user_id,
     )
     mastered = {r["skill_id"] for r in rows if r["mastered_at"] is not None and not r["decayed"]}
     now = datetime.now(UTC)
@@ -393,7 +398,13 @@ async def skills(principal: Principal = Depends(current_principal)) -> list[Skil
     Skills the learner has never touched are returned too, so the map can render the
     locked and available states rather than an empty graph.
     """
-    known = {s.skill_id: s for s in await _skill_state(principal)}
+    return await skill_map(principal.org_id, principal.user_id)
+
+
+async def skill_map(org_id: UUID, user_id: UUID) -> list[SkillStateOut]:
+    """Every skill in the ontology for one user, touched or not. Shared by a learner's
+    own map and the adult view of someone else's."""
+    known = {s.skill_id: s for s in await _skill_state(org_id, user_id)}
     mastered = {sid for sid, s in known.items() if s.mastered}
 
     out = list(known.values())
