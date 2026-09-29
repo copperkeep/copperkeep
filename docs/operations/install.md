@@ -125,6 +125,9 @@ See `deploy/compose/README.md`.
    pass. If `crossOriginIsolated` is false, something in front of the web service is
    stripping COOP/COEP — `--set ingress.crossOriginIsolationHeaders=true` if your
    controller is ingress-nginx, otherwise fix the proxy.
-2. Sign in as the bootstrap adult and create a learner.
+2. Sign in as the bootstrap adult. It is the org admin, and lands on the **Family** view:
+   add a learner there (**Add a learner**: a name, a username, a 4–8 digit PIN), then
+   sign in as them on the learner's device. Add any other adults from the same view —
+   they see only the learners you link to them.
 3. Follow [backup-restore.md](backup-restore.md) once, on this machine, before you need
    it.
