@@ -127,14 +127,15 @@ The complete browser-facing contract, all under `/v1/`. Everything else is stati
 |---|---|---|
 | `POST /v1/auth/login` | PIN / picture / password / QR token | Throttled per account (§7.4) |
 | `POST /v1/auth/logout` | Revoke session | |
-| `GET  /v1/me` | Identity, role, reading tier, owned learners | |
+| `GET  /v1/me` | Identity, role, reading tier, `is_admin`, owned learners | |
 | `POST /v1/events` | **Batched** progress events | Validated, quota-limited, returns updated `skill_state` deltas |
 | `POST /v1/submissions` | Code + client eval result | Stored verbatim; referenced by `step_completed` |
 | `GET  /v1/skills` | Learner's `skill_state` and unlock set | The only source of truth for the skill map |
 | `GET  /v1/reviews/due` | Spaced-review queue | |
 | `POST /v1/hint` | Request AI guidance | Only when §19 enabled; returns validated hint or `204` |
-| `GET  /v1/reports/:learner` | Parent / instructor projection | Guardianship-checked |
-| `/v1/admin/*` | Orgs, cohorts, join codes, learner reset, unlock | Adult role only |
+| `GET  /v1/reports/:learner` | Parent / instructor projection | Self, org admin, or a linked adult ([ADR 0011](../adr/0011-org-admin.md)) |
+| `GET  /v1/learners/:id/{skills,progress,activity,submissions}` | One learner's skill map, per-lesson progress, event timeline and submitted code | Same check as reports |
+| `/v1/admin/*` | Accounts (list, add, edit, remove), guardianship links, PIN / password reset, unlock, cohorts, recompute | Adult role; adding adults, granting admin, links and removal are org-admin only |
 | `GET  /healthz`, `/metrics` | Liveness, Prometheus | |
 
 Sessions are `httpOnly`, `Secure`, `SameSite=Strict` cookies. The single origin (§3.1)
@@ -583,6 +584,11 @@ delivery. It is never a login identifier and never required.
 
 **Adult** (parent / instructor / admin): username + password, plus printed recovery
 codes generated at setup. Optional passkey.
+
+One or more adults hold **org admin** (`users.is_admin`): they see and manage every
+account in the org. Every other adult sees only the learners linked to them in
+`guardianship`. The org always keeps at least one admin. See
+[ADR 0011](../adr/0011-org-admin.md).
 
 **Learner**: created by an adult or joined via a code. Display name only — no email,
 no legal name, no birthdate. The owning adult holds an unconditional reset capability.
@@ -1527,6 +1533,7 @@ rephrasing before generated guidance
 | One chart, no per-service charts | Five services, one product, one release |
 | No Postgres subchart | `embedded` exists so the restore path is understandable; a dependency undoes that |
 | Chart published as an OCI artifact | One registry, one auth, one mirroring tool for air-gapped sites |
+| Org admin is a flag, not a role; other adults see only linked learners | A second family on the box must not see the first family's children ([ADR 0011](../adr/0011-org-admin.md)) |
 
 ---
 

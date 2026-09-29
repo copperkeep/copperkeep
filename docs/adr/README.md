@@ -24,3 +24,4 @@ Not every commit; roughly the granularity of the decisions table in
 | [0008](0008-chart-in-repo.md) | One chart, in this repo, versioned with the app | Accepted |
 | [0009](0009-licence.md) | AGPL-3.0, with carve-outs and a CLA | Accepted, reverses its own premise |
 | [0010](0010-pwa-is-load-bearing.md) | PWA install is load-bearing, not cosmetic | Accepted, reverses an earlier rationale |
+| [0011](0011-org-admin.md) | One org admin flag; every other adult sees only linked learners | Accepted |

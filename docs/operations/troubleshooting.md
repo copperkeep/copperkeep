@@ -45,18 +45,26 @@ same disk as the database is not a backup.
 
 ## A learner is locked out
 
-By design: ten failed PIN attempts hard-locks a learner account, and only the owning
-adult can clear it — never a timer, never self-service.
+By design: ten failed PIN attempts hard-locks a learner account, and only an adult can
+clear it — never a timer, never self-service. The adults who can are the org admin and
+any adult linked to that learner.
+
+Sign in as that adult. The **Family** view marks the account **Locked**; select it and
+press **Unlock**. Without the web UI, the same thing is:
 
 ```sh
 curl -X POST -b adult.cookies https://learn.example.com/v1/admin/learners/<id>/unlock
 ```
 
 Adult accounts back off exponentially but never hard-lock, because there may be nobody
-above them. Recovery codes bypass the backoff.
+above them — wait for the backoff to pass. There is **no recovery path for a forgotten
+adult password yet** (recovery codes are copperkeep/copperkeep#39); the org admin can
+reset any other adult's password from the Family view, so keep at least two admins if
+you can.
 
-If this happens repeatedly to one learner, look at the instructor view: a learner
-enumerating classmates' accounts should be visible rather than silent.
+If this happens repeatedly to one learner, look at the Family view: failed sign-ins
+show as a badge on the account even before it locks, so a learner trying classmates'
+PINs is visible rather than silent.
 
 ## Events are being rejected
 
