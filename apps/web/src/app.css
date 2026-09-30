@@ -17,13 +17,110 @@
   margin-bottom: 24px;
 }
 
-.bar h1 {
+/* The mark and wordmark. Copper is the brand, never a state: nothing else is --brand. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 22px;
   letter-spacing: -0.025em;
   line-height: 1;
   margin: 0;
+  color: var(--fg);
+}
+
+.logo__mark {
+  display: inline-flex;
+  color: var(--brand);
+}
+
+.logo__copper {
+  color: var(--brand);
+}
+
+.theme-toggle svg {
+  flex: none;
+}
+
+/* ---------- sign in ---------- */
+
+/* Brand panel beside the form on wide screens; the form alone below 900px. */
+.signin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.signin__brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 56px 64px;
+  background: var(--ink-850);
+  border-right: 1px solid var(--line);
+}
+
+.signin__brand .logo {
+  font-size: 28px;
+}
+
+/* Sits between the logo and the pitch, bleeding off the right edge, so it never runs
+ * under text. */
+.signin__watermark {
+  position: absolute;
+  right: -80px;
+  top: 120px;
+  color: var(--line);
+  pointer-events: none;
+}
+
+.signin__watermark svg {
+  stroke-width: 2;
+}
+
+.signin__pitch {
+  position: relative;
+  max-width: 30rem;
+}
+
+.signin__claim {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(36px, 4.5vw, 60px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0 0 18px;
+}
+
+.signin__form {
+  align-self: center;
+  width: 100%;
+  max-width: 440px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 899px) {
+  .signin {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .signin__brand {
+    padding: 24px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .signin__watermark,
+  .signin__pitch {
+    display: none;
+  }
 }
 
 .controls {
@@ -472,4 +569,9 @@
 .family__tier {
   display: block;
   margin-top: 2px;
+}
+
+/* Run, Check and I'm stuck are the buttons a child presses most: a little more target. */
+.pane--code .btns .tap {
+  min-height: 48px;
 }

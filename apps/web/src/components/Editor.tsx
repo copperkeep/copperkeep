@@ -40,7 +40,7 @@ const theme = EditorView.theme(
     },
     ".cm-activeLine": { backgroundColor: "rgba(255,255,255,0.03)" },
     "&.cm-focused": { outline: "2px solid var(--accent-alt)", outlineOffset: "2px" },
-    ".cm-cursor": { borderLeftColor: "var(--code-fg)" },
+    ".cm-cursor": { borderLeftColor: "var(--code-cursor)", borderLeftWidth: "2px" },
   },
   { dark: true },
 );

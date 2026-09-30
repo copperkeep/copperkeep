@@ -1246,12 +1246,31 @@ text on the page.
 | Token | Dark | Light | Contrast (dark / light) | Means |
 |---|---|---|---|---|
 | `--accent` | `#00e06a` | `#0b7d3f` | 11.1 / 4.9 | the answer — mastered, passed |
-| `--accent-warn` | `#ff9d2e` | `#b45309` | 9.5 / 4.7 | attention — review due, hint used |
+| `--accent-warn` | `#f5b82e` | `#a16207` | 11.0 / 4.6 | attention — review due, hint used |
 | `--accent-alt` | `#5b8cff` | `#2a5bd7` | 6.2 / 5.5 | in progress, links, focus |
 | `--accent-hot` | `#f0466e` | `#c2184a` | 5.4 / 5.6 | failed, locked by failure |
 
 Every light accent also carries white text at ≥ 5:1, so the same token works as a
 fill.
+
+`--accent-warn` is amber rather than orange so it never reads as the brand's copper
+(below).
+
+**Brand — copper, and never a state.** The mark is the *prompt keep*: a crenellated
+keep with a terminal prompt `>_` above the gate, one 4u stroke on a 64-unit grid.
+Copper carries the logo, the "Copper" half of the wordmark and the `.kicker` square, and
+nothing else. It has no meaning in the map above, so nothing a learner reads as status
+is ever copper.
+
+| Token | Dark | Light | Contrast on page (dark / light) | Use |
+|---|---|---|---|---|
+| `--brand` | `#d08a4e` | `#9a5a24` | 7.0 / 5.1 | mark, wordmark, kicker square |
+| `--brand-icon` | `#b87333` | `#b87333` | — | app icons, always on `--code-ground` (the 16/32px favicons use a lighter `#c98347` so the thin stroke holds up) |
+| `--code-cursor` | `#d08a4e` | `#d08a4e` | — | the editor caret |
+
+Icon sources are SVGs in `apps/web/public/icons/` (plus `public/favicon.svg`);
+`scripts/render-icons.mjs` rasterises the PNGs the manifest and iOS need. The 16px
+favicon is its own pixel-fitted drawing, and below 32px the gate is dropped.
 
 **Categorical series** — same hue order in both themes; light variants clear 3:1 on
 the chart well.
