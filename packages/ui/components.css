@@ -143,7 +143,7 @@ p {
   content: "";
   width: 7px;
   height: 7px;
-  background: var(--accent-alt);
+  background: var(--brand);
   display: inline-block;
 }
 

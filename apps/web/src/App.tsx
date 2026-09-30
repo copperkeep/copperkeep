@@ -9,6 +9,7 @@ import { Conformance } from "./components/Conformance";
 import { LessonNav, type LessonEntry } from "./components/LessonNav";
 import { LessonView } from "./components/LessonView";
 import { Login } from "./components/Login";
+import { Logo } from "./components/Logo";
 import { Family } from "./components/family/Family";
 import { SkillMap } from "./components/SkillMap";
 
@@ -199,7 +200,7 @@ export function App() {
   return (
     <div className="shell">
       <header className="bar">
-        <h1>Copperkeep</h1>
+        <Logo as="h1" />
         <div className="controls">
           <span className="label">View</span>
           <div className="seg" role="group" aria-label="View">
@@ -221,19 +222,14 @@ export function App() {
             ))}
           </div>
 
-          <span className="label">Theme</span>
-          <div className="seg" role="group" aria-label="Theme">
-            {(["auto", "light", "dark"] as Theme[]).map((option) => (
-              <button
-                key={option}
-                className="tap tap--quiet"
-                aria-pressed={theme === option}
-                onClick={() => setTheme(option)}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+          <button
+            className="tap tap--quiet theme-toggle"
+            aria-label={`Theme: ${theme}. Switch to ${NEXT_THEME[theme]}`}
+            onClick={() => setTheme(NEXT_THEME[theme])}
+          >
+            <ThemeIcon theme={theme} />
+            <span aria-hidden="true">{THEME_LABEL[theme]}</span>
+          </button>
 
           <button
             className="tap tap--quiet"
@@ -309,8 +305,43 @@ const VIEW_LABEL: Record<View, string> = {
   family: "Family",
   lesson: "Lesson",
   map: "Skills",
-  conformance: "Runtime",
+  conformance: "Check my device",
 };
+
+/** One button cycles the theme: auto follows the device, then the two fixed choices. */
+const NEXT_THEME: Record<Theme, Theme> = { auto: "light", light: "dark", dark: "auto" };
+const THEME_LABEL: Record<Theme, string> = { auto: "Auto", light: "Light", dark: "Dark" };
+
+function ThemeIcon({ theme }: { theme: Theme }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {theme === "light" && (
+        <>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </>
+      )}
+      {theme === "dark" && <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />}
+      {theme === "auto" && (
+        <>
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 /** The view named in the URL, or null when there is none. */
 function hashView(): View | null {

@@ -62,6 +62,8 @@ const TEXT = [
   { tokens: ACCENTS, grounds: ["--ink-900", "--ink-700"], min: 4.5 },
   { tokens: ACCENTS, grounds: ["--ink-800"], min: 3.0 },
   { tokens: SERIES, grounds: ["--ink-800"], min: 3.0 },
+  // The wordmark is text: it clears the body bar on the page and on cards.
+  { tokens: ["--brand"], grounds: ["--ink-900", "--ink-700"], min: 4.5 },
 ];
 
 let failures = 0;
