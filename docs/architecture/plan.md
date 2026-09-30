@@ -1265,7 +1265,7 @@ is ever copper.
 | Token | Dark | Light | Contrast on page (dark / light) | Use |
 |---|---|---|---|---|
 | `--brand` | `#d08a4e` | `#9a5a24` | 7.0 / 5.1 | mark, wordmark, kicker square |
-| `--brand-icon` | `#b87333` | `#b87333` | — | app icons, always on `--code-ground` |
+| `--brand-icon` | `#b87333` | `#b87333` | — | app icons, always on `--code-ground` (the 16/32px favicons use a lighter `#c98347` so the thin stroke holds up) |
 | `--code-cursor` | `#d08a4e` | `#d08a4e` | — | the editor caret |
 
 Icon sources are SVGs in `apps/web/public/icons/` (plus `public/favicon.svg`);

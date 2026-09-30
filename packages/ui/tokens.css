@@ -79,8 +79,9 @@
   --code-cursor: #d08a4e;
 
   /* Copper is the brand, never a state. It marks the logo, the wordmark and the kicker
-   * square; nothing a learner reads as status is ever copper. --brand-icon is the one
-   * value on the app icons, which always sit on --code-ground. */
+   * square; nothing a learner reads as status is ever copper. --brand-icon is the
+   * value on the app icons, which always sit on --code-ground (the 16/32px favicons use
+   * a lighter #c98347 so their thin stroke holds up). */
   --brand-icon: #b87333;
 
   --font-display: "Inter Tight", Inter, system-ui, -apple-system, sans-serif;
