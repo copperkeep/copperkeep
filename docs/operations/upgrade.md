@@ -24,6 +24,11 @@ docker compose pull && docker compose up -d
 
 **Do not use Watchtower.** An auto-update landing mid-lesson is a bad experience.
 
+## Upgrading to 0.1.12
+
+A web-only release: the prompt-keep logo, app icons and a new sign-in page, plus the
+copper brand tokens. No migration, no values changes. No action needed.
+
 ## Upgrading to 0.1.11
 
 Runs migration `0002_org_admin.sql` (the chart's pre-upgrade Job does this). It adds
